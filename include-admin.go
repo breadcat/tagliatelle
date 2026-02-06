@@ -18,7 +18,7 @@ func loadConfig() error {
 		DatabasePath: "./database.db",
 		UploadDir:    "uploads",
 		ServerPort:   ":8080",
-		InstanceName: "Taggart",
+		InstanceName: "Tagliatelle",
 		GallerySize:  "400px",
 		ItemsPerPage: "100",
 		TagAliases:   []TagAliasGroup{},
