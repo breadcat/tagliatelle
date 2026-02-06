@@ -11,6 +11,8 @@ function makeTimestampsClickable(containerId, videoId, imageId) {
   const container = document.getElementById(containerId);
   const video = document.getElementById(videoId);
   const image = document.getElementById(imageId);
+  const videoContainer = document.getElementById('videoContainer');
+  const imageContainer = document.getElementById('imageContainer');
 
   // Regex for timestamps: [h:mm:ss] or [mm:ss] or [ss]
   const timestampRegex = /\[(\d{1,2}(?::\d{2}){0,2})\]/g;
@@ -18,16 +20,14 @@ function makeTimestampsClickable(containerId, videoId, imageId) {
   const rotateRegex = /\[rotate(0|90|180|270)\]/g;
 
   // Replace timestamps
-  container.innerHTML = container.innerHTML.replace(timestampRegex, (match, ts) => {
-    const seconds = parseTimestamp(ts);
-    return `<a href="#" class="timestamp" data-time="${seconds}">${match}</a>`;
+  container.innerHTML = container.innerHTML
+    .replace(timestampRegex, (match, ts) => {
+      const seconds = parseTimestamp(ts);
+      return `<a href="#" class="timestamp" data-time="${seconds}">${match}</a>`;
+    })
+    .replace(rotateRegex, (match, angle) => {
+      return `<a href="#" class="rotate" data-angle="${angle}">${match}</a>`;
   });
-
-  // Replace rotations
-  container.innerHTML = container.innerHTML.replace(rotateRegex, (match, angle) => {
-    return `<a href="#" class="rotate" data-angle="${angle}">${match}</a>`;
-  });
-
   // Handle clicks
   container.addEventListener("click", e => {
     if (e.target.classList.contains("timestamp")) {
@@ -40,14 +40,25 @@ function makeTimestampsClickable(containerId, videoId, imageId) {
     } else if (e.target.classList.contains("rotate")) {
       e.preventDefault();
       const angle = Number(e.target.dataset.angle);
-      // Apply rotation to whichever element exists
-      const target = video || image;
-      if (target) {
-        target.style.transform = `rotate(${angle}deg)`;
-        target.style.transformOrigin = "center center";
-      }
-    }
+
+      if (video) {
+		applyRotation(video, angle);
+	  } else if (image) {
+		applyRotation(image, angle);
+	  }
+	}
   });
+}
+
+function applyRotation(element, angle) {
+  element.style.transform = `rotate(${angle}deg)`;
+  element.style.transformOrigin = "center center";
+
+  if (angle === 90 || angle === 270) {
+    element.style.maxWidth = "none";
+  } else {
+    element.style.maxWidth = "100%";
+  }
 }
 
 // Run it

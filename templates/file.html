@@ -59,7 +59,9 @@
 <div class="file-content">
 
 	{{if hasAnySuffix .Data.File.Filename ".jpg" ".jpeg" ".png" ".gif" ".webp"}}
+	  <div id="imageContainer" class="media-container">
 	  <a href="/uploads/{{.Data.EscapedFilename}}" target="_blank"><img src="/uploads/{{.Data.EscapedFilename}}" id="imageViewer" class="file-content-image"></a><br>
+	  </div>
 	  <script src="/static/timestamps.js" defer></script>
 	{{else if hasAnySuffix .Data.File.Filename ".cbz"}}
 	  <div class="cbz-preview">
@@ -71,9 +73,11 @@
 		</div>
 	  </div>
 	{{else if hasAnySuffix .Data.File.Filename ".mp4" ".webm" ".mov" ".m4v"}}
+	  <div id="videoContainer" class="media-container">
 	  <video id="videoPlayer" controls loop muted width="600">
 		<source src="/uploads/{{.Data.EscapedFilename}}">
 	  </video><br>
+	  </div>
 	  <script src="/static/timestamps.js" defer></script>
 	{{else if hasAnySuffix .Data.File.Filename ".txt" ".md"}}
 	  <div id="text-viewer-container">

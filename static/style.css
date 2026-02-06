@@ -80,6 +80,9 @@ pre#text-viewer {white-space:pre-wrap; overflow:auto; background:#111; color:#ee
 
 img.file-content-image {max-width:400px}
 
+/* media containers */
+.media-container img, .media-container video { transition: transform 0.2s ease; display: block; margin: auto; }
+
 /* pagination */
 .pagination .disabled,.pagination a{border-radius:4px;padding:.5rem 1rem}
 .pagination{display:flex;justify-content:center;align-items:center;gap:1rem;margin:2rem 0;padding:1rem}
