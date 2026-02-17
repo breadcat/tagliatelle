@@ -18,8 +18,8 @@ Then access the server via a web browser, the default port is 8080.
 
 ## Features
 * Multiple tags per category
-* Bulk tag management via file ID or `tag:value` query
-* Search through names, comments or tag values with wildcard support
+* Bulk tag management via `file-id` or `tag:value` query
+* Search through file names, descriptions or tag values with wildcard support
 * Image, video, text and cbz gallery viewers
 * Will transcode incompatible video formats
 * Tag value aliases, e.g. `color:blue` and `color:navy`
@@ -29,6 +29,9 @@ Then access the server via a web browser, the default port is 8080.
 * Artbitrary searchable descriptions on files
 * Raw file URI copying for external application access
 * In browser file management (delete, rename)
+* Self-organising, categorised notes, with optional `sed` operation rules
+* Orphan and reverse orphan finding
+* Database backup and vacuum support
 
 ## Limitations
 * SQLite requires cgo, which requires gcc. Build/run with `CGO_ENABLED=1`
