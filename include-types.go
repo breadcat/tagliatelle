@@ -62,6 +62,7 @@ type Pagination struct {
 	PrevPage    int
 	NextPage    int
 	PerPage     int
+	PageBaseURL string
 }
 
 type VideoFile struct {

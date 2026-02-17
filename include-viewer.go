@@ -237,7 +237,7 @@ func listFilesHandler(w http.ResponseWriter, r *http.Request) {
 		Tagged:      tagged,
 		Untagged:    untagged,
 		Breadcrumbs: []Breadcrumb{},
-	}, page, total, perPage)
+	}, page, total, perPage, r)
 
 	renderTemplate(w, "list.html", pageData)
 }

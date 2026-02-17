@@ -46,7 +46,7 @@ func untaggedFilesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	files, total, _ := getUntaggedFilesPaginated(page, perPage)
-	pageData := buildPageDataWithPagination("Untagged Files", files, page, total, perPage)
+	pageData := buildPageDataWithPagination("Untagged Files", files, page, total, perPage, r)
 	renderTemplate(w, "untagged.html", pageData)
 }
 
@@ -153,7 +153,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 			Tagged:      files,
 			Untagged:    nil,
 			Breadcrumbs: []Breadcrumb{},
-		}, 1, len(files), len(files))
+		}, 1, len(files), len(files), r)
 		pageData.Breadcrumbs = breadcrumbs
 
 		renderTemplate(w, "list.html", pageData)
@@ -263,7 +263,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 		Tagged:      files,
 		Untagged:    nil,
 		Breadcrumbs: []Breadcrumb{},
-	}, page, total, perPage)
+	}, page, total, perPage, r)
 	pageData.Breadcrumbs = breadcrumbs
 
 	renderTemplate(w, "list.html", pageData)
