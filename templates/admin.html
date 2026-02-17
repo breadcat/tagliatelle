@@ -37,6 +37,8 @@
 
 <!-- Settings Tab -->
 <div id="admin-content-settings">
+	<div class="config-container">
+    <div class="config-split">
     <h2>Settings</h2>
     <form method="post" style="max-width: 600px;">
         <input type="hidden" name="active_tab" value="settings">
@@ -92,8 +94,9 @@
             Save Settings
         </button>
     </form>
+	</div>
 
-    <div style="margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
+    <div class="config-split">
         <h3>Current Configuration:</h3>
         <ul>
             <li><strong>Database:</strong> {{.Data.Config.DatabasePath}}</li>
@@ -106,6 +109,7 @@
 
         <h4>Configuration File:</h4>
         <p>Settings are stored in <code>config.json</code> in the application directory.</p>
+    </div>
     </div>
 </div>
 
@@ -160,6 +164,8 @@
 
 <!-- Sed Rules Tab -->
 <div id="admin-content-sedrules" style="display: none;">
+	<div class="config-container">
+    <div class="config-split">
     <h2>Sed Rules for Notes</h2>
     <p style="color: #666; margin-bottom: 20px;">
         Define sed rules that can be applied to notes in the Notes editor.
@@ -182,8 +188,9 @@
             </button>
         </form>
     </div>
+    </div>
 
-    <div style="margin-top: 30px; padding: 15px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px;">
+    <div class="config-split">
         <h4 style="margin-top: 0;">Example Sed Commands:</h4>
         <ul style="font-family: monospace; font-size: 13px;">
             <li><code>s?[?&]brandIds=[0-9]\+&productId=[0-9]\+??g</code> - Remove URL parameters</li>
@@ -192,6 +199,7 @@
             <li><code>s/https\?:\/\/[^ ]*//g</code> - Remove URLs</li>
             <li><code>/^$/d</code> - Delete empty lines</li>
         </ul>
+    </div>
     </div>
 </div>
 
