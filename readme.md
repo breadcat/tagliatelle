@@ -37,4 +37,4 @@ Then access the server via a web browser, the default port is 8080.
 
 ## Credits
 * [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3) for the go SQLite3 library
-* [Fluent UI System Icons](https://freesvgicons.com/packs/fluent) for SVG icons used
+* [Fluent UI System Icons](https://icones.js.org/collection/fluent) for SVG icons used
