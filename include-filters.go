@@ -70,8 +70,8 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 	tagPairs := strings.Split(fullPath, "/and/tag/")
 
 	breadcrumbs := []Breadcrumb{
-		{Name: "Home", URL: "/"},
-		{Name: "Tags", URL: "/tags"},
+		{Name: "home", URL: "/"},
+		{Name: "tags", URL: "/tags"},
 	}
 
 	var filters []filter
@@ -114,14 +114,14 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if !categoryExists {
 			breadcrumbs = append(breadcrumbs, Breadcrumb{
-				Name: strings.Title(parts[0]),
+				Name: parts[0],
 				URL:  "/tags#tag-" + parts[0],
 			})
 		}
 
 		// Add value breadcrumb
 		breadcrumbs = append(breadcrumbs, Breadcrumb{
-			Name: strings.Title(parts[1]),
+			Name: parts[1],
 			URL:  currentPath,
 		})
 	}

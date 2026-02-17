@@ -92,7 +92,7 @@ img.file-content-image {max-width:400px}
 
 /* breadcrumb bar */
 .breadcrumb a,.breadcrumb span,.breadcrumb-separator{vertical-align:bottom}
-.breadcrumb{padding:1rem;font-size:1.1rem}
+.breadcrumb{padding:1rem;font-size:1.1rem;text-transform:capitalize}
 .breadcrumb a:hover{text-decoration:underline}
 .breadcrumb span{font-weight:500}
 .breadcrumb-separator{font-size:.8em}
