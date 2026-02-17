@@ -36,6 +36,7 @@
 <div id="admin-content-settings">
     <h2>Settings</h2>
     <form method="post" style="max-width: 600px;">
+        <input type="hidden" name="active_tab" value="settings">
         <div style="margin-bottom: 20px;">
             <label for="database_path" style="display: block; font-weight: bold; margin-bottom: 5px;">Database Path:</label>
             <input type="text" id="database_path" name="database_path" value="{{.Data.Config.DatabasePath}}" required
@@ -110,6 +111,7 @@
     <h2>Database Maintenance</h2>
 
     <form method="post" style="margin-bottom: 20px;">
+        <input type="hidden" name="active_tab" value="database">
         <input type="hidden" name="action" value="backup">
         <button type="submit" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
             Backup Database
@@ -118,6 +120,7 @@
     </form>
 
     <form method="post">
+        <input type="hidden" name="active_tab" value="database">
         <input type="hidden" name="action" value="vacuum">
         <button type="submit" style="background-color: #6f42c1; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
             Vacuum Database
@@ -142,6 +145,7 @@
         </button>
 
         <form method="post" id="aliases-form" style="margin-top: 20px;">
+            <input type="hidden" name="active_tab" value="aliases">
             <input type="hidden" name="action" value="save_aliases">
             <input type="hidden" name="aliases_json" id="aliases_json">
             <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
@@ -154,19 +158,38 @@
 <!-- Orphans Tab -->
 <div id="admin-content-orphans" style="display: none;">
     <h2>Orphaned Files</h2>
-    <p style="color: #666; margin-bottom: 20px;">
+
+    <!-- Files on disk, not in DB -->
+    <h3 style="margin-top: 24px;">Disk Orphans</h3>
+    <p style="color: #666; margin-bottom: 12px;">
         These files exist in the upload directory but are not tracked in the database.
     </p>
-
-    {{if .Data.Orphans}}
+    {{if .Data.OrphanData.Orphans}}
     <ul style="list-style-type: disc; padding-left: 20px;">
-      {{range .Data.Orphans}}
+      {{range .Data.OrphanData.Orphans}}
         <li style="margin-bottom: 5px; font-family: monospace;">{{.}}</li>
       {{end}}
     </ul>
     {{else}}
     <div style="padding: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px;">
-        <strong>✓ No orphaned files found!</strong>
+        <strong>✓ No disk orphans found!</strong>
+    </div>
+    {{end}}
+
+    <!-- Files in DB, not on disk -->
+    <h3 style="margin-top: 32px;">Database Orphans</h3>
+    <p style="color: #666; margin-bottom: 12px;">
+        These files are tracked in the database but are missing from the upload directory.
+    </p>
+    {{if .Data.OrphanData.ReverseOrphans}}
+    <ul style="list-style-type: disc; padding-left: 20px;">
+      {{range .Data.OrphanData.ReverseOrphans}}
+        <li style="margin-bottom: 5px; font-family: monospace;">{{.}}</li>
+      {{end}}
+    </ul>
+    {{else}}
+    <div style="padding: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px;">
+        <strong>✓ No database orphans found!</strong>
     </div>
     {{end}}
 </div>

@@ -63,7 +63,7 @@ func validateConfig(newConfig Config) error {
 
 func adminHandler(w http.ResponseWriter, r *http.Request) {
 	// Get orphaned files
-	orphans, _ := getOrphanedFiles(config.UploadDir)
+	orphanData, _ := getOrphanedFiles(config.UploadDir)
 
 	// Get video files for thumbnails
 	missingThumbnails, _ := getMissingThumbnailVideos()
@@ -74,7 +74,7 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 
 		switch action {
 		case "save", "":
-			handleSaveSettings(w, r, orphans, missingThumbnails)
+			handleSaveSettings(w, r, orphanData, missingThumbnails)
 			return
 
 		case "backup":
@@ -83,13 +83,15 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 				Config            Config
 				Error             string
 				Success           string
-				Orphans           []string
+				OrphanData        OrphanData
+				ActiveTab         string
 				MissingThumbnails []VideoFile
 			}{
 				Config:            config,
 				Error:             errorString(err),
 				Success:           successString(err, "Database backup created successfully!"),
-				Orphans:           orphans,
+				OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 				MissingThumbnails: missingThumbnails,
 			})
 			renderTemplate(w, "admin.html", pageData)
@@ -101,20 +103,22 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 				Config            Config
 				Error             string
 				Success           string
-				Orphans           []string
+				OrphanData        OrphanData
+				ActiveTab         string
 				MissingThumbnails []VideoFile
 			}{
 				Config:            config,
 				Error:             errorString(err),
 				Success:           successString(err, "Database vacuum completed successfully!"),
-				Orphans:           orphans,
+				OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 				MissingThumbnails: missingThumbnails,
 			})
 			renderTemplate(w, "admin.html", pageData)
 			return
 
 		case "save_aliases":
-			handleSaveAliases(w, r, orphans, missingThumbnails)
+			handleSaveAliases(w, r, orphanData, missingThumbnails)
 			return
 		}
 
@@ -123,20 +127,22 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 			Config            Config
 			Error             string
 			Success           string
-			Orphans           []string
+			OrphanData        OrphanData
+				ActiveTab         string
 			MissingThumbnails []VideoFile
 		}{
 			Config:            config,
 			Error:             "",
 			Success:           "",
-			Orphans:           orphans,
+			OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 			MissingThumbnails: missingThumbnails,
 		})
 		renderTemplate(w, "admin.html", pageData)
 	}
 }
 
-func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphans []string, missingThumbnails []VideoFile) {
+func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
 	aliasesJSON := r.FormValue("aliases_json")
 
 	var aliases []TagAliasGroup
@@ -146,13 +152,15 @@ func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphans []string,
 				Config            Config
 				Error             string
 				Success           string
-				Orphans           []string
+				OrphanData        OrphanData
+				ActiveTab         string
 				MissingThumbnails []VideoFile
 			}{
 				Config:            config,
 				Error:             "Invalid aliases JSON: " + err.Error(),
 				Success:           "",
-				Orphans:           orphans,
+				OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 				MissingThumbnails: missingThumbnails,
 			})
 			renderTemplate(w, "admin.html", pageData)
@@ -167,13 +175,15 @@ func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphans []string,
 			Config            Config
 			Error             string
 			Success           string
-			Orphans           []string
+			OrphanData        OrphanData
+				ActiveTab         string
 			MissingThumbnails []VideoFile
 		}{
 			Config:            config,
 			Error:             "Failed to save configuration: " + err.Error(),
 			Success:           "",
-			Orphans:           orphans,
+			OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 			MissingThumbnails: missingThumbnails,
 		})
 		renderTemplate(w, "admin.html", pageData)
@@ -184,19 +194,21 @@ func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphans []string,
 		Config            Config
 		Error             string
 		Success           string
-		Orphans           []string
+		OrphanData        OrphanData
+				ActiveTab         string
 		MissingThumbnails []VideoFile
 	}{
 		Config:            config,
 		Error:             "",
 		Success:           "Tag aliases saved successfully!",
-		Orphans:           orphans,
+		OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 		MissingThumbnails: missingThumbnails,
 	})
 	renderTemplate(w, "admin.html", pageData)
 }
 
-func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphans []string, missingThumbnails []VideoFile) {
+func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
 	newConfig := Config{
 		DatabasePath: strings.TrimSpace(r.FormValue("database_path")),
 		UploadDir:    strings.TrimSpace(r.FormValue("upload_dir")),
@@ -212,13 +224,15 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphans []string
 			Config            Config
 			Error             string
 			Success           string
-			Orphans           []string
+			OrphanData        OrphanData
+				ActiveTab         string
 			MissingThumbnails []VideoFile
 		}{
 			Config:            config,
 			Error:             err.Error(),
 			Success:           "",
-			Orphans:           orphans,
+			OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 			MissingThumbnails: missingThumbnails,
 		})
 		renderTemplate(w, "admin.html", pageData)
@@ -234,13 +248,15 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphans []string
 			Config            Config
 			Error             string
 			Success           string
-			Orphans           []string
+			OrphanData        OrphanData
+				ActiveTab         string
 			MissingThumbnails []VideoFile
 		}{
 			Config:            config,
 			Error:             "Failed to save configuration: " + err.Error(),
 			Success:           "",
-			Orphans:           orphans,
+			OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 			MissingThumbnails: missingThumbnails,
 		})
 		renderTemplate(w, "admin.html", pageData)
@@ -258,13 +274,15 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphans []string
 		Config            Config
 		Error             string
 		Success           string
-		Orphans           []string
+		OrphanData        OrphanData
+				ActiveTab         string
 		MissingThumbnails []VideoFile
 	}{
 		Config:            config,
 		Error:             "",
 		Success:           message,
-		Orphans:           orphans,
+		OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
 		MissingThumbnails: missingThumbnails,
 	})
 	renderTemplate(w, "admin.html", pageData)
@@ -313,9 +331,25 @@ func vacuumDatabase(dbPath string) error {
 }
 
 func getFilesInDB() (map[string]bool, error) {
-	rows, err := db.Query(`SELECT filename FROM files`)
-	if err != nil {
-		return nil, err
+    rows, err := db.Query("SELECT filename FROM files")
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    fileMap := make(map[string]bool)
+    for rows.Next() {
+        var name string
+        if err := rows.Scan(&name); err != nil {
+            return nil, err
+        }
+        fileMap[name] = true
+    }
+    if err := rows.Err(); err != nil {
+        return nil, err
+    }
+    return fileMap, nil
+}
 	}
 	defer rows.Close()
 

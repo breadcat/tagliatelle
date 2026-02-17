@@ -98,3 +98,8 @@ type TagPair struct {
 	Category string
 	Value    string
 }
+
+type OrphanData struct {
+	Orphans        []string // on disk, not in DB
+	ReverseOrphans []string // in DB, not on disk
+}
