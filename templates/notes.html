@@ -1,0 +1,105 @@
+{{template "_header" .}}
+
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <label>Search:</label>
+                <input type="text" class="search-box" id="search-input" placeholder="Search notes...">
+            </div>
+            <div class="toolbar-group">
+                <label>Filter by Category:</label>
+                <select id="category-filter" onchange="filterByCategory()">
+                    <option value="">All Categories</option>
+                    <option value="__uncategorized__">Uncategorized</option>
+                    {{range .Data.Categories}}
+                    <option value="{{.}}">{{.}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div class="toolbar-group">
+                <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+                <button class="btn btn-secondary" onclick="previewProcessing()">Preview</button>
+            </div>
+            <div class="toolbar-actions">
+                <button class="btn btn-success" onclick="saveNotes()">Save</button>
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="editor-container">
+            <div class="editor-pane">
+                <div class="pane-header">Editor</div>
+                <textarea id="editor" placeholder="Enter your notes here...
+Format: category > value
+Example:
+websites > https://example.com
+tools > useful-tool
+ideas > interesting concept">{{.Data.Content}}</textarea>
+            </div>
+            <div class="editor-pane">
+                <div class="pane-header">Preview</div>
+                <div class="preview-content" id="preview">{{.Data.Content}}</div>
+            </div>
+        </div>
+
+
+<details><summary>Statistics</summary>
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-label">Total Lines:</span>
+                <span class="stat-value" id="total-lines">{{.Data.Stats.total_lines}}</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Categorized:</span>
+                <span class="stat-value" id="categorized-lines">{{.Data.Stats.categorized_lines}}</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Uncategorized:</span>
+                <span class="stat-value" id="uncategorized-lines">{{.Data.Stats.uncategorized}}</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Categories:</span>
+                <span class="stat-value" id="unique-categories">{{.Data.Stats.unique_categories}}</span>
+            </div>
+        </div>
+</details>
+
+<details><summary>Sed Operations</summary>
+        <div class="operations-panel">
+            {{if .Data.SedRules}}
+            <div class="operations-grid">
+                {{range $index, $rule := .Data.SedRules}}
+                <button class="operation-btn" onclick="applySedRule({{$index}})">
+                    <div class="operation-name">{{$rule.Name}}</div>
+                    <div class="operation-desc">{{$rule.Description}}</div>
+                </button>
+                {{end}}
+            </div>
+            {{else}}
+            <div style="padding: 15px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; color: #666;">
+                No sed rules configured. Add sed rules in the <a href="/admin" style="color: #007bff;">Admin → Sed Rules</a> section.
+            </div>
+            {{end}}
+</details>
+
+<details><summary>Import and Export</summary>
+
+            <div class="import-form">
+				<button class="btn btn-primary" onclick="exportNotes()">Export</button>
+                <h4 style="margin-bottom: 10px">Import Notes</h4>
+                <form action="/notes/import" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file" accept=".txt" required>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="merge" value="true">
+                        <span>Merge with existing notes (instead of replacing)</span>
+                    </label>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Import</button>
+                </form>
+            </div>
+
+</details>
+
+        </div>
+
+    <script src="/static/notes.js" defer></script>
+{{template "_footer"}}

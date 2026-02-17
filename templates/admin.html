@@ -24,6 +24,9 @@
     <button onclick="showAdminTab('aliases')" id="admin-tab-aliases" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
         Aliases
     </button>
+    <button onclick="showAdminTab('sedrules')" id="admin-tab-sedrules" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+        Sed Rules
+    </button>
     <button onclick="showAdminTab('orphans')" id="admin-tab-orphans" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
         Orphans
     </button>
@@ -152,6 +155,43 @@
                 Save Aliases
             </button>
         </form>
+    </div>
+</div>
+
+<!-- Sed Rules Tab -->
+<div id="admin-content-sedrules" style="display: none;">
+    <h2>Sed Rules for Notes</h2>
+    <p style="color: #666; margin-bottom: 20px;">
+        Define sed rules that can be applied to notes in the Notes editor.
+        These rules will appear as buttons in the notes interface for quick text transformations.
+    </p>
+
+    <div id="sedrules-section" style="max-width: 800px;">
+        <div id="sed-rules"></div>
+
+        <button onclick="addSedRule()" style="background-color: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; margin-top: 10px;">
+            + Add Sed Rule
+        </button>
+
+        <form method="post" action="/admin" id="sedrules-form" style="margin-top: 20px;">
+            <input type="hidden" name="active_tab" value="sedrules">
+            <input type="hidden" name="action" value="save_sed_rules">
+            <input type="hidden" name="sed_rules_json" id="sed_rules_json">
+            <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+                Save Sed Rules
+            </button>
+        </form>
+    </div>
+
+    <div style="margin-top: 30px; padding: 15px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px;">
+        <h4 style="margin-top: 0;">Example Sed Commands:</h4>
+        <ul style="font-family: monospace; font-size: 13px;">
+            <li><code>s?[?&]brandIds=[0-9]\+&productId=[0-9]\+??g</code> - Remove URL parameters</li>
+            <li><code>s/[[:space:]]*$//</code> - Remove trailing whitespace</li>
+            <li><code>s/  \+/ /g</code> - Replace multiple spaces with single space</li>
+            <li><code>s/https\?:\/\/[^ ]*//g</code> - Remove URLs</li>
+            <li><code>/^$/d</code> - Delete empty lines</li>
+        </ul>
     </div>
 </div>
 
@@ -294,7 +334,10 @@
 </div>
 
 <script>window.initialAliasGroups = {{.Data.Config.TagAliases}};</script>
+<script>window.initialSedRules = {{.Data.Config.SedRules}};</script>
+<script>window.activeAdminTab = "{{.Data.ActiveTab}}";</script>
 <script src="/static/tag-alias.js" defer></script>
+<script src="/static/sed-rules.js" defer></script>
 <script src="/static/admin-tabs.js" defer></script>
 
 {{template "_footer"}}

@@ -1,7 +1,7 @@
 // Admin tab management
 function showAdminTab(tabName) {
     // Hide all content sections
-    const contents = ['settings', 'database', 'aliases', 'orphans', 'thumbnails'];
+    const contents = ['settings', 'database', 'aliases', 'sedrules', 'orphans', 'thumbnails'];
     contents.forEach(name => {
         const content = document.getElementById(`admin-content-${name}`);
         if (content) {

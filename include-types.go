@@ -10,13 +10,14 @@ type File struct {
 }
 
 type Config struct {
-	DatabasePath string `json:"database_path"`
-	UploadDir    string `json:"upload_dir"`
-	ServerPort   string `json:"server_port"`
-	InstanceName string `json:"instance_name"`
-	GallerySize  string `json:"gallery_size"`
-	ItemsPerPage string `json:"items_per_page"`
+	DatabasePath string          `json:"database_path"`
+	UploadDir    string          `json:"upload_dir"`
+	ServerPort   string          `json:"server_port"`
+	InstanceName string          `json:"instance_name"`
+	GallerySize  string          `json:"gallery_size"`
+	ItemsPerPage string          `json:"items_per_page"`
 	TagAliases   []TagAliasGroup `json:"tag_aliases"`
+	SedRules     []SedRule       `json:"sed_rules"`
 }
 
 type Breadcrumb struct {
@@ -102,4 +103,23 @@ type TagPair struct {
 type OrphanData struct {
 	Orphans        []string // on disk, not in DB
 	ReverseOrphans []string // in DB, not on disk
+}
+
+type Note struct {
+	Category string
+	Value    string
+	Original string // The full line as stored
+}
+
+type Operation struct {
+	Name        string
+	Description string
+	Type        string // "sed", "regex", "builtin"
+	Command     string
+}
+
+type SedRule struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Command     string `json:"command"`
 }

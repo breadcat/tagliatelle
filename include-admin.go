@@ -22,6 +22,7 @@ func loadConfig() error {
 		GallerySize:  "400px",
 		ItemsPerPage: "100",
 		TagAliases:   []TagAliasGroup{},
+		SedRules:     []SedRule{},
 	}
 
 	if data, err := ioutil.ReadFile("config.json"); err == nil {
@@ -120,6 +121,11 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 		case "save_aliases":
 			handleSaveAliases(w, r, orphanData, missingThumbnails)
 			return
+
+		case "save_sed_rules":
+			handleSaveSedRules(w, r, orphanData, missingThumbnails)
+			return
+
 		}
 
 	default:
@@ -350,14 +356,69 @@ func getFilesInDB() (map[string]bool, error) {
     }
     return fileMap, nil
 }
-	}
-	defer rows.Close()
 
-	fileMap := make(map[string]bool)
-	for rows.Next() {
-		var name string
-		rows.Scan(&name)
-		fileMap[name] = true
+func handleSaveSedRules(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+	sedRulesJSON := r.FormValue("sed_rules_json")
+
+	var sedRules []SedRule
+	if sedRulesJSON != "" {
+		if err := json.Unmarshal([]byte(sedRulesJSON), &sedRules); err != nil {
+			pageData := buildPageData("Admin", struct {
+				Config            Config
+				Error             string
+				Success           string
+				OrphanData        OrphanData
+				ActiveTab         string
+				MissingThumbnails []VideoFile
+			}{
+				Config:            config,
+				Error:             "Invalid sed rules JSON: " + err.Error(),
+				Success:           "",
+				OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
+				MissingThumbnails: missingThumbnails,
+			})
+			renderTemplate(w, "admin.html", pageData)
+			return
+		}
 	}
-	return fileMap, nil
+
+	config.SedRules = sedRules
+
+	if err := saveConfig(); err != nil {
+		pageData := buildPageData("Admin", struct {
+			Config            Config
+			Error             string
+			Success           string
+			OrphanData        OrphanData
+				ActiveTab         string
+			MissingThumbnails []VideoFile
+		}{
+			Config:            config,
+			Error:             "Failed to save configuration: " + err.Error(),
+			Success:           "",
+			OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
+			MissingThumbnails: missingThumbnails,
+		})
+		renderTemplate(w, "admin.html", pageData)
+		return
+	}
+
+	pageData := buildPageData("Admin", struct {
+		Config            Config
+		Error             string
+		Success           string
+		OrphanData        OrphanData
+				ActiveTab         string
+		MissingThumbnails []VideoFile
+	}{
+		Config:            config,
+		Error:             "",
+		Success:           "Sed rules saved successfully!",
+		OrphanData:        orphanData,
+				ActiveTab:         r.FormValue("active_tab"),
+		MissingThumbnails: missingThumbnails,
+	})
+	renderTemplate(w, "admin.html", pageData)
 }

@@ -45,6 +45,11 @@ func createTables(db *sql.DB) error {
 		tag_id INTEGER,
 		UNIQUE(file_id, tag_id)
 	);
+	CREATE TABLE IF NOT EXISTS notes (
+		id INTEGER PRIMARY KEY CHECK (id = 1),
+		content TEXT DEFAULT '',
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
 	`
 
 	_, err := db.Exec(schema)
