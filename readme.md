@@ -25,7 +25,7 @@ Then access the server via a web browser, the default port is 8080.
 * Tag value aliases, e.g. `color:blue` and `color:navy`
 * Regenerate video thumbnails via web interface
 * Add files via local upload, remote upload or `yt-dlp` directly
-* Clickable [rotate90](## "Rotates video/image contents by angle on click"), [l45](## "Jumps to line number in text viewer on click") and [01:23](## "Jumps video playback to specified timestamp on click") shortcodes in file descriptions
+* Clickable [rotate90](## "Rotates video/image contents by angle on click"), [l45](## "Jumps to line number in text viewer on click"), [01:23](## "Jumps video playback to specified timestamp on click") and [file/1234](## "Clickable link to that file ID") shortcodes in file descriptions
 * Artbitrary searchable descriptions on files
 * Raw file URI copying for external application access
 * In browser file management (delete, rename)
