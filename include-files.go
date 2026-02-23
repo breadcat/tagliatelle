@@ -143,12 +143,22 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 	http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
 }
 
-func checkFileConflictStrict(filename string) (string, string, error) {
+func checkFileConflictStrict(filename string) (string, string, int64, error) {
 	finalPath := filepath.Join(config.UploadDir, filename)
 	if _, err := os.Stat(finalPath); err == nil {
-		return "", "", fmt.Errorf("a file with that name already exists")
+		existingID, dbErr := getFileIDByName(filename)
+		if dbErr != nil {
+			return "", "", 0, fmt.Errorf("a file with that name already exists")
+		}
+		return "", "", existingID, nil
 	} else if !os.IsNotExist(err) {
-		return "", "", fmt.Errorf("failed to check for existing file: %v", err)
+		return "", "", 0, fmt.Errorf("failed to check for existing file: %v", err)
 	}
-	return filename, finalPath, nil
+	return filename, finalPath, 0, nil
+}
+
+func getFileIDByName(filename string) (int64, error) {
+	var id int64
+	err := db.QueryRow("SELECT id FROM files WHERE filename = ?", filename).Scan(&id)
+	return id, err
 }

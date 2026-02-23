@@ -72,9 +72,12 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func processUpload(src io.Reader, filename string) (int64, string, error) {
-    finalFilename, finalPath, err := checkFileConflictStrict(filename)
+    finalFilename, finalPath, conflictID, err := checkFileConflictStrict(filename)
     if err != nil {
         return 0, "", err
+    }
+    if conflictID != 0 {
+        return conflictID, "", nil
     }
 
     tempPath := finalPath + ".tmp"
@@ -196,9 +199,13 @@ func ytdlpHandler(w http.ResponseWriter, r *http.Request) {
 	expectedFullPath := strings.TrimSpace(string(filenameBytes))
 	expectedFilename := filepath.Base(expectedFullPath)
 
-	finalFilename, finalPath, err := checkFileConflictStrict(expectedFilename)
+	finalFilename, finalPath, conflictID, err := checkFileConflictStrict(expectedFilename)
 	if err != nil {
 		renderError(w, err.Error(), http.StatusConflict)
+		return
+	}
+	if conflictID != 0 {
+		redirectWithWarning(w, r, fmt.Sprintf("/file/%d", conflictID), "")
 		return
 	}
 
