@@ -9,6 +9,7 @@ import (
     "os"
     "os/exec"
     "path/filepath"
+    "strconv"
     "strings"
 )
 
@@ -33,6 +34,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var warnings []string
+	var lastID int64
 
 	// Process each file
 	for _, fileHeader := range files {
@@ -43,11 +45,13 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer file.Close()
 
-		_, warningMsg, err := processUpload(file, fileHeader.Filename)
+		id, warningMsg, err := processUpload(file, fileHeader.Filename)
 		if err != nil {
 			renderError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		lastID = id
 
 		if warningMsg != "" {
 			warnings = append(warnings, warningMsg)
@@ -59,7 +63,12 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		warningMsg = strings.Join(warnings, "; ")
 	}
 
-	redirectWithWarning(w, r, "/untagged", warningMsg)
+	redirectTarget := "/untagged"
+	if len(files) == 1 && lastID != 0 {
+		redirectTarget = "/file/" + strconv.FormatInt(lastID, 10)
+	}
+
+	redirectWithWarning(w, r, redirectTarget, warningMsg)
 }
 
 func processUpload(src io.Reader, filename string) (int64, string, error) {
