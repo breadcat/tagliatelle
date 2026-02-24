@@ -1,16 +1,42 @@
 package main
 
 import (
-    "database/sql"
-    "encoding/json"
-    "fmt"
-    "io"
-    "net/http"
-    "os"
-    "path/filepath"
-    "strings"
-    "time"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 )
+
+type AdminPageData struct {
+	Config            Config
+	Error             string
+	Success           string
+	OrphanData        OrphanData
+	ActiveTab         string
+	MissingThumbnails []VideoFile
+}
+
+func renderAdminPage(w http.ResponseWriter, r *http.Request, data AdminPageData) {
+	if data.ActiveTab == "" {
+		data.ActiveTab = r.FormValue("active_tab")
+	}
+	pageData := buildPageData("Admin", data)
+	renderTemplate(w, "admin.html", pageData)
+}
+
+func currentAdminState(r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) AdminPageData {
+	return AdminPageData{
+		Config:            config,
+		OrphanData:        orphanData,
+		ActiveTab:         r.FormValue("active_tab"),
+		MissingThumbnails: missingThumbnails,
+	}
+}
 
 func loadConfig() error {
 	config = Config{
@@ -70,80 +96,33 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodPost:
-		action := r.FormValue("action")
-
-		switch action {
+		switch r.FormValue("action") {
 		case "save", "":
 			handleSaveSettings(w, r, orphanData, missingThumbnails)
-			return
 
 		case "backup":
 			err := backupDatabase(config.DatabasePath)
-			pageData := buildPageData("Admin", struct {
-				Config            Config
-				Error             string
-				Success           string
-				OrphanData        OrphanData
-				ActiveTab         string
-				MissingThumbnails []VideoFile
-			}{
-				Config:            config,
-				Error:             errorString(err),
-				Success:           successString(err, "Database backup created successfully!"),
-				OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-				MissingThumbnails: missingThumbnails,
-			})
-			renderTemplate(w, "admin.html", pageData)
-			return
+			data := currentAdminState(r, orphanData, missingThumbnails)
+			data.Error = errorString(err)
+			data.Success = successString(err, "Database backup created successfully!")
+			renderAdminPage(w, r, data)
 
 		case "vacuum":
 			err := vacuumDatabase(config.DatabasePath)
-			pageData := buildPageData("Admin", struct {
-				Config            Config
-				Error             string
-				Success           string
-				OrphanData        OrphanData
-				ActiveTab         string
-				MissingThumbnails []VideoFile
-			}{
-				Config:            config,
-				Error:             errorString(err),
-				Success:           successString(err, "Database vacuum completed successfully!"),
-				OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-				MissingThumbnails: missingThumbnails,
-			})
-			renderTemplate(w, "admin.html", pageData)
-			return
+			data := currentAdminState(r, orphanData, missingThumbnails)
+			data.Error = errorString(err)
+			data.Success = successString(err, "Database vacuum completed successfully!")
+			renderAdminPage(w, r, data)
 
 		case "save_aliases":
 			handleSaveAliases(w, r, orphanData, missingThumbnails)
-			return
 
 		case "save_sed_rules":
 			handleSaveSedRules(w, r, orphanData, missingThumbnails)
-			return
-
 		}
 
 	default:
-		pageData := buildPageData("Admin", struct {
-			Config            Config
-			Error             string
-			Success           string
-			OrphanData        OrphanData
-				ActiveTab         string
-			MissingThumbnails []VideoFile
-		}{
-			Config:            config,
-			Error:             "",
-			Success:           "",
-			OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-			MissingThumbnails: missingThumbnails,
-		})
-		renderTemplate(w, "admin.html", pageData)
+		renderAdminPage(w, r, currentAdminState(r, orphanData, missingThumbnails))
 	}
 }
 
@@ -153,22 +132,9 @@ func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData Orphan
 	var aliases []TagAliasGroup
 	if aliasesJSON != "" {
 		if err := json.Unmarshal([]byte(aliasesJSON), &aliases); err != nil {
-			pageData := buildPageData("Admin", struct {
-				Config            Config
-				Error             string
-				Success           string
-				OrphanData        OrphanData
-				ActiveTab         string
-				MissingThumbnails []VideoFile
-			}{
-				Config:            config,
-				Error:             "Invalid aliases JSON: " + err.Error(),
-				Success:           "",
-				OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-				MissingThumbnails: missingThumbnails,
-			})
-			renderTemplate(w, "admin.html", pageData)
+			data := currentAdminState(r, orphanData, missingThumbnails)
+			data.Error = "Invalid aliases JSON: " + err.Error()
+			renderAdminPage(w, r, data)
 			return
 		}
 	}
@@ -176,41 +142,15 @@ func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData Orphan
 	config.TagAliases = aliases
 
 	if err := saveConfig(); err != nil {
-		pageData := buildPageData("Admin", struct {
-			Config            Config
-			Error             string
-			Success           string
-			OrphanData        OrphanData
-				ActiveTab         string
-			MissingThumbnails []VideoFile
-		}{
-			Config:            config,
-			Error:             "Failed to save configuration: " + err.Error(),
-			Success:           "",
-			OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-			MissingThumbnails: missingThumbnails,
-		})
-		renderTemplate(w, "admin.html", pageData)
+		data := currentAdminState(r, orphanData, missingThumbnails)
+		data.Error = "Failed to save configuration: " + err.Error()
+		renderAdminPage(w, r, data)
 		return
 	}
 
-	pageData := buildPageData("Admin", struct {
-		Config            Config
-		Error             string
-		Success           string
-		OrphanData        OrphanData
-				ActiveTab         string
-		MissingThumbnails []VideoFile
-	}{
-		Config:            config,
-		Error:             "",
-		Success:           "Tag aliases saved successfully!",
-		OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-		MissingThumbnails: missingThumbnails,
-	})
-	renderTemplate(w, "admin.html", pageData)
+	data := currentAdminState(r, orphanData, missingThumbnails)
+	data.Success = "Tag aliases saved successfully!"
+	renderAdminPage(w, r, data)
 }
 
 func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
@@ -225,72 +165,58 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData Orpha
 	}
 
 	if err := validateConfig(newConfig); err != nil {
-		pageData := buildPageData("Admin", struct {
-			Config            Config
-			Error             string
-			Success           string
-			OrphanData        OrphanData
-				ActiveTab         string
-			MissingThumbnails []VideoFile
-		}{
-			Config:            config,
-			Error:             err.Error(),
-			Success:           "",
-			OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-			MissingThumbnails: missingThumbnails,
-		})
-		renderTemplate(w, "admin.html", pageData)
+		data := currentAdminState(r, orphanData, missingThumbnails)
+		data.Error = err.Error()
+		renderAdminPage(w, r, data)
 		return
 	}
 
-	needsRestart := (newConfig.DatabasePath != config.DatabasePath ||
-		newConfig.ServerPort != config.ServerPort)
+	needsRestart := newConfig.DatabasePath != config.DatabasePath ||
+		newConfig.ServerPort != config.ServerPort
 
 	config = newConfig
+
 	if err := saveConfig(); err != nil {
-		pageData := buildPageData("Admin", struct {
-			Config            Config
-			Error             string
-			Success           string
-			OrphanData        OrphanData
-				ActiveTab         string
-			MissingThumbnails []VideoFile
-		}{
-			Config:            config,
-			Error:             "Failed to save configuration: " + err.Error(),
-			Success:           "",
-			OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-			MissingThumbnails: missingThumbnails,
-		})
-		renderTemplate(w, "admin.html", pageData)
+		data := currentAdminState(r, orphanData, missingThumbnails)
+		data.Error = "Failed to save configuration: " + err.Error()
+		renderAdminPage(w, r, data)
 		return
 	}
 
-	var message string
+	data := currentAdminState(r, orphanData, missingThumbnails)
 	if needsRestart {
-		message = "Settings saved successfully! Please restart the server for database/port changes to take effect."
+		data.Success = "Settings saved successfully! Please restart the server for database/port changes to take effect."
 	} else {
-		message = "Settings saved successfully!"
+		data.Success = "Settings saved successfully!"
+	}
+	renderAdminPage(w, r, data)
+}
+
+func handleSaveSedRules(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+	sedRulesJSON := r.FormValue("sed_rules_json")
+
+	var sedRules []SedRule
+	if sedRulesJSON != "" {
+		if err := json.Unmarshal([]byte(sedRulesJSON), &sedRules); err != nil {
+			data := currentAdminState(r, orphanData, missingThumbnails)
+			data.Error = "Invalid sed rules JSON: " + err.Error()
+			renderAdminPage(w, r, data)
+			return
+		}
 	}
 
-	pageData := buildPageData("Admin", struct {
-		Config            Config
-		Error             string
-		Success           string
-		OrphanData        OrphanData
-				ActiveTab         string
-		MissingThumbnails []VideoFile
-	}{
-		Config:            config,
-		Error:             "",
-		Success:           message,
-		OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-		MissingThumbnails: missingThumbnails,
-	})
-	renderTemplate(w, "admin.html", pageData)
+	config.SedRules = sedRules
+
+	if err := saveConfig(); err != nil {
+		data := currentAdminState(r, orphanData, missingThumbnails)
+		data.Error = "Failed to save configuration: " + err.Error()
+		renderAdminPage(w, r, data)
+		return
+	}
+
+	data := currentAdminState(r, orphanData, missingThumbnails)
+	data.Success = "Sed rules saved successfully!"
+	renderAdminPage(w, r, data)
 }
 
 func backupDatabase(dbPath string) error {
@@ -327,8 +253,7 @@ func vacuumDatabase(dbPath string) error {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("VACUUM;")
-	if err != nil {
+	if _, err = db.Exec("VACUUM;"); err != nil {
 		return fmt.Errorf("VACUUM failed: %w", err)
 	}
 
@@ -336,88 +261,22 @@ func vacuumDatabase(dbPath string) error {
 }
 
 func getFilesInDB() (map[string]bool, error) {
-    rows, err := db.Query("SELECT filename FROM files")
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+	rows, err := db.Query("SELECT filename FROM files")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-    fileMap := make(map[string]bool)
-    for rows.Next() {
-        var name string
-        if err := rows.Scan(&name); err != nil {
-            return nil, err
-        }
-        fileMap[name] = true
-    }
-    if err := rows.Err(); err != nil {
-        return nil, err
-    }
-    return fileMap, nil
-}
-
-func handleSaveSedRules(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
-	sedRulesJSON := r.FormValue("sed_rules_json")
-
-	var sedRules []SedRule
-	if sedRulesJSON != "" {
-		if err := json.Unmarshal([]byte(sedRulesJSON), &sedRules); err != nil {
-			pageData := buildPageData("Admin", struct {
-				Config            Config
-				Error             string
-				Success           string
-				OrphanData        OrphanData
-				ActiveTab         string
-				MissingThumbnails []VideoFile
-			}{
-				Config:            config,
-				Error:             "Invalid sed rules JSON: " + err.Error(),
-				Success:           "",
-				OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-				MissingThumbnails: missingThumbnails,
-			})
-			renderTemplate(w, "admin.html", pageData)
-			return
+	fileMap := make(map[string]bool)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
 		}
+		fileMap[name] = true
 	}
-
-	config.SedRules = sedRules
-
-	if err := saveConfig(); err != nil {
-		pageData := buildPageData("Admin", struct {
-			Config            Config
-			Error             string
-			Success           string
-			OrphanData        OrphanData
-				ActiveTab         string
-			MissingThumbnails []VideoFile
-		}{
-			Config:            config,
-			Error:             "Failed to save configuration: " + err.Error(),
-			Success:           "",
-			OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-			MissingThumbnails: missingThumbnails,
-		})
-		renderTemplate(w, "admin.html", pageData)
-		return
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
-
-	pageData := buildPageData("Admin", struct {
-		Config            Config
-		Error             string
-		Success           string
-		OrphanData        OrphanData
-				ActiveTab         string
-		MissingThumbnails []VideoFile
-	}{
-		Config:            config,
-		Error:             "",
-		Success:           "Sed rules saved successfully!",
-		OrphanData:        orphanData,
-				ActiveTab:         r.FormValue("active_tab"),
-		MissingThumbnails: missingThumbnails,
-	})
-	renderTemplate(w, "admin.html", pageData)
+	return fileMap, nil
 }
