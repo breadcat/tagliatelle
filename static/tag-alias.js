@@ -92,12 +92,6 @@ function updateAlias(groupIndex, aliasIndex, value) {
     aliasGroups[groupIndex].aliases[aliasIndex] = value;
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 document.getElementById('aliases-form').addEventListener('submit', function(e) {
     // Filter out empty groups and aliases
     const cleanedGroups = aliasGroups

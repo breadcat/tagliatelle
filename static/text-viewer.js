@@ -23,12 +23,6 @@ function toggleLineNumbers() {
   }
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
 function toggleFullscreen() {
   const container = document.getElementById("text-viewer-container");
   if (!document.fullscreenElement) {
