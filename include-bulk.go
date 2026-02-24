@@ -440,14 +440,10 @@ func findFilesWithAnyTag(tags []TagPair) ([]int, error) {
 
 	var conditions []string
 	var args []interface{}
-	argIndex := 1
 
 	for _, tag := range tags {
-		conditions = append(conditions, fmt.Sprintf(
-			"(c.name = $%d AND t.value = $%d)",
-			argIndex, argIndex+1))
+		conditions = append(conditions, "(c.name = ? AND t.value = ?)")
 		args = append(args, tag.Category, tag.Value)
-		argIndex += 2
 	}
 
 	query += strings.Join(conditions, " OR ")
@@ -485,20 +481,18 @@ func findFilesWithAllTags(tags []TagPair) ([]int, error) {
 
 	var conditions []string
 	var args []interface{}
-	argIndex := 1
 
 	for _, tag := range tags {
-		conditions = append(conditions, fmt.Sprintf(`
+		conditions = append(conditions, `
 			EXISTS (
 				SELECT 1 FROM file_tags ft
 				JOIN tags t ON ft.tag_id = t.id
 				JOIN categories c ON t.category_id = c.id
 				WHERE ft.file_id = f.id
-				AND c.name = $%d
-				AND t.value = $%d
-			)`, argIndex, argIndex+1))
+				AND c.name = ?
+				AND t.value = ?
+			)`)
 		args = append(args, tag.Category, tag.Value)
-		argIndex += 2
 	}
 
 	query += strings.Join(conditions, " AND ")
