@@ -5,7 +5,6 @@ import (
     "encoding/json"
     "fmt"
     "io"
-    "io/ioutil"
     "net/http"
     "os"
     "path/filepath"
@@ -25,7 +24,7 @@ func loadConfig() error {
 		SedRules:     []SedRule{},
 	}
 
-	if data, err := ioutil.ReadFile("config.json"); err == nil {
+	if data, err := os.ReadFile("config.json"); err == nil {
 		if err := json.Unmarshal(data, &config); err != nil {
 			return err
 		}
@@ -39,7 +38,7 @@ func saveConfig() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile("config.json", data, 0644)
+	return os.WriteFile("config.json", data, 0644)
 }
 
 func validateConfig(newConfig Config) error {
