@@ -4,46 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 )
 
-func getTaggedFiles() ([]File, error) {
-	return queryFilesWithTags(`
-		SELECT DISTINCT f.id, f.filename, f.path, COALESCE(f.description, '') as description
-		FROM files f
-		JOIN file_tags ft ON ft.file_id = f.id
-		ORDER BY f.id DESC
-	`)
-}
-
-func getUntaggedFiles() ([]File, error) {
-	return queryFilesWithTags(`
-		SELECT f.id, f.filename, f.path, COALESCE(f.description, '') as description
-		FROM files f
-		LEFT JOIN file_tags ft ON ft.file_id = f.id
-		WHERE ft.file_id IS NULL
-		ORDER BY f.id DESC
-	`)
-}
-
 func untaggedFilesHandler(w http.ResponseWriter, r *http.Request) {
-	// Get page number from query params
-	pageStr := r.URL.Query().Get("page")
-	page := 1
-	if pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
-
-	// Get per page from config
-	perPage := 50
-	if config.ItemsPerPage != "" {
-		if pp, err := strconv.Atoi(config.ItemsPerPage); err == nil && pp > 0 {
-			perPage = pp
-		}
-	}
+	page := pageFromRequest(r)
+	perPage := perPageFromConfig(50)
 
 	files, total, _ := getUntaggedFilesPaginated(page, perPage)
 	pageData := buildPageDataWithPagination("Untagged Files", files, page, total, perPage, r)
@@ -51,20 +17,8 @@ func untaggedFilesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
-	pageStr := r.URL.Query().Get("page")
-	page := 1
-	if pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
-
-	perPage := 50
-	if config.ItemsPerPage != "" {
-		if pp, err := strconv.Atoi(config.ItemsPerPage); err == nil && pp > 0 {
-			perPage = pp
-		}
-	}
+	page := pageFromRequest(r)
+	perPage := perPageFromConfig(50)
 
 	fullPath := strings.TrimPrefix(r.URL.Path, "/tag/")
 	tagPairs := strings.Split(fullPath, "/and/tag/")

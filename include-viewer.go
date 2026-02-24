@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 )
 
@@ -207,22 +206,8 @@ func getOrCreateCategoryAndTag(category, value string) (int, int, error) {
 }
 
 func listFilesHandler(w http.ResponseWriter, r *http.Request) {
-	// Get page number from query params
-	pageStr := r.URL.Query().Get("page")
-	page := 1
-	if pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
-
-	// Get per page from config
-	perPage := 50
-	if config.ItemsPerPage != "" {
-		if pp, err := strconv.Atoi(config.ItemsPerPage); err == nil && pp > 0 {
-			perPage = pp
-		}
-	}
+	page := pageFromRequest(r)
+	perPage := perPageFromConfig(50)
 
 	tagged, taggedTotal, _ := getTaggedFilesPaginated(page, perPage)
 	untagged, untaggedTotal, _ := getUntaggedFilesPaginated(page, perPage)

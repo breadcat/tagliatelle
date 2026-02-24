@@ -3,23 +3,13 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
-
-	page := 1
-	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
-		page = p
-	}
-	perPage := 100
-	if config.ItemsPerPage != "" {
-		if n, err := strconv.Atoi(config.ItemsPerPage); err == nil && n > 0 {
-			perPage = n
-		}
-	}
+	page := pageFromRequest(r)
+	perPage := perPageFromConfig(50)
 
 	var files []File
 	var total int

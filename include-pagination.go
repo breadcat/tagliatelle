@@ -4,8 +4,23 @@ import (
 	"database/sql"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
+
+func pageFromRequest(r *http.Request) int {
+	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
+		return p
+	}
+	return 1
+}
+
+func perPageFromConfig(fallback int) int {
+	if n, err := strconv.Atoi(config.ItemsPerPage); err == nil && n > 0 {
+		return n
+	}
+	return fallback
+}
 
 func getUntaggedFilesPaginated(page, perPage int) ([]File, int, error) {
 	// Get total count
