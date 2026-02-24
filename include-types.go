@@ -112,13 +112,6 @@ type Note struct {
 	Original string // The full line as stored
 }
 
-type Operation struct {
-	Name        string
-	Description string
-	Type        string // "sed", "regex", "builtin"
-	Command     string
-}
-
 type SedRule struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
