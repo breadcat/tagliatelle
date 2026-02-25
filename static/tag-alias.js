@@ -7,7 +7,7 @@ function renderAliasGroups() {
 
     aliasGroups.forEach((group, groupIndex) => {
         const groupDiv = document.createElement('div');
-        groupDiv.style.cssText = 'border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background-color: #f8f9fa;';
+        groupDiv.style.cssText = 'border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px;';
 
         groupDiv.innerHTML = `
             <div style="margin-bottom: 10px;">
