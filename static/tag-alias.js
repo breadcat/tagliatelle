@@ -106,4 +106,6 @@ document.getElementById('aliases-form').addEventListener('submit', function(e) {
 });
 
 // Initial render
-renderAliasGroups();
+document.addEventListener('DOMContentLoaded', function() {
+    renderAliasGroups();
+});
