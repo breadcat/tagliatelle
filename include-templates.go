@@ -11,6 +11,9 @@ func InitTemplates() (*template.Template, error) {
 	return template.New("").Funcs(template.FuncMap{
 		"add": func(a, b int) int { return a + b },
 		"sub": func(a, b int) int { return a - b },
+		"hasPrefix": func(s, prefix string) bool {
+			return strings.HasPrefix(s, prefix)
+		},
 		"hasAnySuffix": func(s string, suffixes ...string) bool {
 			for _, suf := range suffixes {
 				if strings.HasSuffix(strings.ToLower(s), suf) {
