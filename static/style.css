@@ -32,7 +32,6 @@ nav ul.sub-menu li a:hover{background:#2a2a2a}
 
 /* responsive nav bar */
 @media (max-width: 600px) {
-  nav ul li a span, nav ul li strong {display: none;}
   nav ul li a svg {display: inline-block; margin: 0 auto; width: 1.8rem; }
   nav ul li a {padding: 0.8rem}
   div#search-container form input {width: 80px}
