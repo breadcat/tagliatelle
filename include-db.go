@@ -8,7 +8,7 @@ import (
 
 // InitDatabase opens the database connection and creates tables if needed
 func InitDatabase(dbPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite3", dbPath+"?_busy_timeout=5000")
 	if err != nil {
 		return nil, err
 	}
@@ -44,6 +44,12 @@ func createTables(db *sql.DB) error {
 		file_id INTEGER,
 		tag_id INTEGER,
 		UNIQUE(file_id, tag_id)
+	);
+	CREATE TABLE IF NOT EXISTS file_properties (
+		file_id INTEGER,
+		key   TEXT,
+		value TEXT,
+		UNIQUE(file_id, key)
 	);
 	CREATE TABLE IF NOT EXISTS notes (
 		id INTEGER PRIMARY KEY CHECK (id = 1),

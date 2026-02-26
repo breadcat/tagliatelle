@@ -35,6 +35,11 @@ type TagDisplay struct {
 	Count int
 }
 
+type PropertyDisplay struct {
+	Value string
+	Count int
+}
+
 type ListData struct {
     Tagged      []File
     Untagged    []File
@@ -42,15 +47,16 @@ type ListData struct {
 }
 
 type PageData struct {
-	Title      string
-	Data       interface{}
-	Query      string
-	IP         string
-	Port       string
-	Files      []File
-	Tags       map[string][]TagDisplay
+	Title       string
+	Data        interface{}
+	Query       string
+	IP          string
+	Port        string
+	Files       []File
+	Tags        map[string][]TagDisplay
+	Properties  map[string][]PropertyDisplay
 	Breadcrumbs []Breadcrumb
-	Pagination *Pagination
+	Pagination  *Pagination
 	GallerySize string
 }
 

@@ -1,0 +1,16 @@
+{{template "_header" .}}
+<h1>Properties</h1>
+
+{{range $key, $values := .Data}}
+<details><summary><a href="#prop-{{$key}}" id="prop-{{$key}}">{{$key}}</a></summary>
+<ul>
+      {{range $values}}
+        <li><a href="/property/{{$key}}/{{.Value}}" {{if eq $key "filetype"}}style="text-transform:lowercase"{{end}}>{{.Value}} ({{.Count}})</a></li>
+      {{end}}
+</ul>
+</details>
+{{else}}
+<p>No properties have been computed yet. Visit the <a href="/admin">Admin</a> page to compute them.</p>
+{{end}}
+
+{{template "_footer"}}

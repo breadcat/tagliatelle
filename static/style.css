@@ -26,8 +26,7 @@ nav ul li ul li:hover>ul,nav ul li:hover>ul{display:block}
 nav ul li ul{display:none;position:absolute;top:100%;left:0;z-index:1000;padding:0}
 nav ul.sub-menu, nav ul.sub-menu li ul {border: 1px solid gray}
 nav ul.sub-menu li {border-right: none}
-nav ul.sub-menu li a:first-letter{text-transform:capitalize}
-nav ul.sub-menu li a{color:#add8e6;background:#1a1a1a; min-width: 110px}
+nav ul.sub-menu li a{color:#add8e6;background:#1a1a1a; min-width: 110px; text-transform:capitalize}
 nav ul.sub-menu li ul li a{min-width: 170px}
 nav ul.sub-menu li a:hover{background:#2a2a2a}
 

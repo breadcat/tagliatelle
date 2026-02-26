@@ -6,6 +6,7 @@ import (
     "net/http"
     "os"
     "path/filepath"
+    "strconv"
     "strings"
 )
 
@@ -138,6 +139,12 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		}
 		renderError(w, "Failed to update database", http.StatusInternalServerError)
 		return
+	}
+
+	// Recompute properties in case the extension changed
+	db.Exec("DELETE FROM file_properties WHERE file_id = ?", fileID)
+	if id, err := strconv.ParseInt(fileID, 10, 64); err == nil {
+		computeProperties(id, newPath)
 	}
 
 	http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)

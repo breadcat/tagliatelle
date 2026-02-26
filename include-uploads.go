@@ -297,6 +297,7 @@ func saveFileToDatabase(filename, path string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to get inserted ID: %v", err)
 	}
+	computeProperties(id, path)
 	return id, nil
 }
 

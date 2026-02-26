@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -119,11 +120,25 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	catRows.Close()
 
+	propRows, _ := db.Query(`
+		SELECT key, value FROM file_properties
+		WHERE file_id = ?
+		ORDER BY key, value
+	`, f.ID)
+	fileProps := make(map[string]string)
+	for propRows.Next() {
+		var k, v string
+		propRows.Scan(&k, &v)
+		fileProps[k] = v
+	}
+	propRows.Close()
+
 	pageData := buildPageDataWithIP(f.Filename, struct {
 		File            File
 		Categories      []string
 		EscapedFilename string
-	}{f, cats, url.PathEscape(f.Filename)})
+		Properties      map[string]string
+	}{f, cats, url.PathEscape(f.Filename), fileProps})
 
 	renderTemplate(w, "file.html", pageData)
 }
@@ -206,8 +221,22 @@ func getOrCreateCategoryAndTag(category, value string) (int, int, error) {
 }
 
 func listFilesHandler(w http.ResponseWriter, r *http.Request) {
-	page := pageFromRequest(r)
-	perPage := perPageFromConfig(50)
+	// Get page number from query params
+	pageStr := r.URL.Query().Get("page")
+	page := 1
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	// Get per page from config
+	perPage := 50
+	if config.ItemsPerPage != "" {
+		if pp, err := strconv.Atoi(config.ItemsPerPage); err == nil && pp > 0 {
+			perPage = pp
+		}
+	}
 
 	tagged, taggedTotal, _ := getTaggedFilesPaginated(page, perPage)
 	untagged, untaggedTotal, _ := getUntaggedFilesPaginated(page, perPage)

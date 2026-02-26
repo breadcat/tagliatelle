@@ -134,6 +134,20 @@
         </button>
         <small style="color: #666; margin-left: 10px;">Reclaims unused space and optimizes database performance</small>
     </form>
+
+    <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+    <h3>File Properties</h3>
+    <p style="color: #666; margin-bottom: 10px;">
+        Compute auto-detected properties (filetype, duration, orientation, resolution) for any files that do not yet have them.
+    </p>
+    <form method="post">
+        <input type="hidden" name="active_tab" value="database">
+        <input type="hidden" name="action" value="compute_properties">
+        <button type="submit" style="background-color: #17a2b8; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+            Compute Missing Properties
+        </button>
+        <small style="color: #666; margin-left: 10px;">Processes only files with no existing properties</small>
+    </form>
 </div>
 
 <!-- Aliases Tab -->

@@ -119,6 +119,9 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 
 		case "save_sed_rules":
 			handleSaveSedRules(w, r, orphanData, missingThumbnails)
+
+		case "compute_properties":
+			handleComputeProperties(w, r, orphanData, missingThumbnails)
 		}
 
 	default:

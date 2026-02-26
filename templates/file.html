@@ -34,6 +34,22 @@
 	</details>
 
     <details>
+    <summary>Properties</summary>
+	{{if .Data.Properties}}
+	<ul>
+	{{range $k, $v := .Data.Properties}}
+	  <li>
+		<span class="file-tag-category">{{$k}}:</span>
+		<a href="/property/{{$k}}/{{$v}}" {{if eq $k "filetype"}}style="text-transform:lowercase"{{end}}>{{$v}}</a>
+	  </li>
+	{{end}}
+	</ul>
+	{{else}}
+	  <p>No properties computed yet.</p>
+	{{end}}
+	</details>
+
+    <details>
     <summary>Raw URL</summary>
 		<input id="raw-url" value="http://{{.IP}}:{{.Port}}/uploads/{{.Data.EscapedFilename}}"><br>
 		<button class="text-button" id="copy-btn">Copy</button><br>

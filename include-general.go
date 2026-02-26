@@ -51,7 +51,14 @@ func successString(err error, msg string) string {
 
 func buildPageData(title string, data interface{}) PageData {
 	tagMap, _ := getTagData()
-	return PageData{Title: title, Data: data, Tags: tagMap, GallerySize: config.GallerySize,}
+	propMap, _ := getPropertyNav()
+	return PageData{
+		Title:       title,
+		Data:        data,
+		Tags:        tagMap,
+		Properties:  propMap,
+		GallerySize: config.GallerySize,
+	}
 }
 
 func getTagData() (map[string][]TagDisplay, error) {
