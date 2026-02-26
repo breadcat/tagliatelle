@@ -1,5 +1,6 @@
 /* main body styling */
 body,button{background:#1a1a1a;color:#cfcfcf;font-family:sans-serif;margin:0;position: relative;}
+body details {text-transform: capitalize}
 a{color:#add8e6;text-decoration:none}
 input[type="url"], input[type="text"] {background:#1a1a1a;color:#cfcfcf;border:1px solid gray;margin: 8px;padding:8px;outline: none; box-sizing: border-box}
 input[type="url"]:focus, input[type="text"]:focus{border:1px solid white;background-color:#3a3a3a}
