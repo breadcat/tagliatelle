@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"net/url"
 	"strings"
 )
 
@@ -11,6 +12,7 @@ func InitTemplates() (*template.Template, error) {
 	return template.New("").Funcs(template.FuncMap{
 		"add": func(a, b int) int { return a + b },
 		"sub": func(a, b int) int { return a - b },
+		"pathEscape": url.PathEscape,
 		"hasPrefix": func(s, prefix string) bool {
 			return strings.HasPrefix(s, prefix)
 		},

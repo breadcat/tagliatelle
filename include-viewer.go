@@ -168,8 +168,16 @@ func getLocalIP() (string, error) {
 
 func tagActionHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 	fileID := parts[2]
-	cat := parts[4]
-	val := parts[5]
+	cat, err := url.PathUnescape(parts[4])
+	if err != nil {
+		http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
+		return
+	}
+	val, err := url.PathUnescape(parts[5])
+	if err != nil {
+		http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
+		return
+	}
 	action := parts[6]
 
 	if action == "delete" && r.Method == http.MethodPost {
