@@ -167,31 +167,29 @@ func getLocalIP() (string, error) {
 }
 
 func tagActionHandler(w http.ResponseWriter, r *http.Request, parts []string) {
-	fileID := parts[2]
-	cat, err := url.PathUnescape(parts[4])
-	if err != nil {
-		http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
-		return
-	}
-	val, err := url.PathUnescape(parts[5])
-	if err != nil {
-		http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
-		return
-	}
-	action := parts[6]
+    fileID := parts[2]
 
-	if action == "delete" && r.Method == http.MethodPost {
-		var tagID int
-		db.QueryRow(`
-			SELECT t.id
-			FROM tags t
-			JOIN categories c ON c.id=t.category_id
-			WHERE c.name=? AND t.value=?`, cat, val).Scan(&tagID)
-		if tagID != 0 {
-			db.Exec("DELETE FROM file_tags WHERE file_id=? AND tag_id=?", fileID, tagID)
-		}
-	}
-	http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
+    if r.Method != http.MethodPost {
+        http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
+        return
+    }
+
+    cat := strings.TrimSpace(r.FormValue("category"))
+    val := strings.TrimSpace(r.FormValue("value"))
+
+    if cat != "" && val != "" {
+        var tagID int
+        db.QueryRow(`
+            SELECT t.id
+            FROM tags t
+            JOIN categories c ON c.id=t.category_id
+            WHERE c.name=? AND t.value=?`, cat, val).Scan(&tagID)
+        if tagID != 0 {
+            db.Exec("DELETE FROM file_tags WHERE file_id=? AND tag_id=?", fileID, tagID)
+        }
+    }
+
+    http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
 }
 
 func getOrCreateCategoryAndTag(category, value string) (int, int, error) {

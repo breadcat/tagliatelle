@@ -13,7 +13,7 @@
 		<span class="file-tag-category">{{$k}}:</span><br>
 		{{range $i, $v := $vs}}
 		  {{if $i}}<br> {{end}}
-		  <form method="post" action="/file/{{$.Data.File.ID}}/tag/{{pathEscape $k}}/{{pathEscape $v}}/delete"><button class="text-button" type="submit">x</button></form>
+		  <form method="post" action="/file/{{$.Data.File.ID}}/tag/delete"><input type="hidden" name="category" value="{{$k}}"><input type="hidden" name="value" value="{{$v}}"><button class="text-button" type="submit">x</button></form>
 		  <a href="/tag/{{pathEscape $k}}/{{pathEscape $v}}">{{$v}}</a>
 		{{end}}
 	  </li>
