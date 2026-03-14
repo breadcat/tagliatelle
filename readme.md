@@ -11,7 +11,7 @@ Very rough around the edges, but functional. Primarily intended for personal use
 ```
 cd tagliatelle
 go get github.com/mattn/go-sqlite3
-go run .
+go run . -d your_directory -p 8080
 ```
 
 Then access the server via a web browser, the default port is 8080.

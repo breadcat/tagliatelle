@@ -10,14 +10,15 @@ type File struct {
 }
 
 type Config struct {
-	DatabasePath string          `json:"database_path"`
-	UploadDir    string          `json:"upload_dir"`
-	ServerPort   string          `json:"server_port"`
-	InstanceName string          `json:"instance_name"`
-	GallerySize  string          `json:"gallery_size"`
-	ItemsPerPage string          `json:"items_per_page"`
-	TagAliases   []TagAliasGroup `json:"tag_aliases"`
-	SedRules     []SedRule       `json:"sed_rules"`
+	// Values from CLI arguments
+	DatabasePath string
+	UploadDir    string
+	ServerPort   string
+	// Values from database
+	GallerySize  string
+	ItemsPerPage string
+	TagAliases   []TagAliasGroup
+	SedRules     []SedRule
 }
 
 type Breadcrumb struct {
@@ -41,9 +42,9 @@ type PropertyDisplay struct {
 }
 
 type ListData struct {
-    Tagged      []File
-    Untagged    []File
-    Breadcrumbs []Breadcrumb
+	Tagged      []File
+	Untagged    []File
+	Breadcrumbs []Breadcrumb
 }
 
 type PageData struct {
@@ -93,10 +94,10 @@ type BulkTagFormData struct {
 	Error       string
 	Success     string
 	FormData    struct {
-		FileRange string
-		Category  string
-		Value     string
-		Operation string
+		FileRange     string
+		Category      string
+		Value         string
+		Operation     string
 		TagQuery      string
 		SelectionMode string
 	}

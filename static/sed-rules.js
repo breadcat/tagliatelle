@@ -94,11 +94,25 @@ function setupSedRulesForm() {
             }
         }
 
-        // Update hidden field with JSON
-        document.getElementById('sed_rules_json').value = JSON.stringify(sedRules);
+        // Remove any previously-injected hidden fields from a prior submit
+        this.querySelectorAll('input[data-generated]').forEach(el => el.remove());
 
-        // Let the form submit normally (don't prevent default)
+        // Append one hidden field per value — no JSON
+        sedRules.forEach((rule, i) => {
+            appendHidden(this, `sed_rules[${i}][name]`,        rule.name);
+            appendHidden(this, `sed_rules[${i}][description]`, rule.description);
+            appendHidden(this, `sed_rules[${i}][command]`,     rule.command);
+        });
     });
+}
+
+function appendHidden(form, name, value) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    input.dataset.generated = '1';
+    form.appendChild(input);
 }
 
 function escapeHtml(text) {

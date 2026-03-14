@@ -2,12 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -38,52 +38,13 @@ func currentAdminState(r *http.Request, orphanData OrphanData, missingThumbnails
 	}
 }
 
-func loadConfig() error {
-	config = Config{
-		DatabasePath: "./database.db",
-		UploadDir:    "uploads",
-		ServerPort:   ":8080",
-		InstanceName: "Tagliatelle",
-		GallerySize:  "400px",
-		ItemsPerPage: "100",
-		TagAliases:   []TagAliasGroup{},
-		SedRules:     []SedRule{},
-	}
-
-	if data, err := os.ReadFile("config.json"); err == nil {
-		if err := json.Unmarshal(data, &config); err != nil {
-			return err
-		}
-	}
-
-	return os.MkdirAll(config.UploadDir, 0755)
-}
-
-func saveConfig() error {
-	data, err := json.MarshalIndent(config, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile("config.json", data, 0644)
-}
-
 func validateConfig(newConfig Config) error {
-	if newConfig.DatabasePath == "" {
-		return fmt.Errorf("database path cannot be empty")
+	if newConfig.GallerySize == "" {
+		return fmt.Errorf("gallery size cannot be empty")
 	}
-
-	if newConfig.UploadDir == "" {
-		return fmt.Errorf("upload directory cannot be empty")
+	if newConfig.ItemsPerPage == "" {
+		return fmt.Errorf("items per page cannot be empty")
 	}
-
-	if newConfig.ServerPort == "" || !strings.HasPrefix(newConfig.ServerPort, ":") {
-		return fmt.Errorf("server port must be in format ':8080'")
-	}
-
-	if err := os.MkdirAll(newConfig.UploadDir, 0755); err != nil {
-		return fmt.Errorf("cannot create upload directory: %v", err)
-	}
-
 	return nil
 }
 
@@ -129,22 +90,52 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
-	aliasesJSON := r.FormValue("aliases_json")
-
-	var aliases []TagAliasGroup
-	if aliasesJSON != "" {
-		if err := json.Unmarshal([]byte(aliasesJSON), &aliases); err != nil {
-			data := currentAdminState(r, orphanData, missingThumbnails)
-			data.Error = "Invalid aliases JSON: " + err.Error()
-			renderAdminPage(w, r, data)
-			return
+func parseAliasesFromForm(r *http.Request) []TagAliasGroup {
+	var groups []TagAliasGroup
+	for i := 0; ; i++ {
+		category := strings.TrimSpace(r.FormValue(fmt.Sprintf("aliases[%d][category]", i)))
+		if category == "" {
+			break
+		}
+		var aliases []string
+		for j := 0; ; j++ {
+			v := strings.TrimSpace(r.FormValue(fmt.Sprintf("aliases[%d][aliases][%d]", i, j)))
+			if v == "" {
+				break
+			}
+			aliases = append(aliases, v)
+		}
+		if len(aliases) >= 2 {
+			groups = append(groups, TagAliasGroup{Category: category, Aliases: aliases})
 		}
 	}
+	return groups
+}
 
-	config.TagAliases = aliases
+func parseSedRulesFromForm(r *http.Request) ([]SedRule, error) {
+	var rules []SedRule
+	for i := 0; ; i++ {
+		name := strings.TrimSpace(r.FormValue(fmt.Sprintf("sed_rules[%d][name]", i)))
+		if name == "" {
+			break
+		}
+		command := strings.TrimSpace(r.FormValue(fmt.Sprintf("sed_rules[%d][command]", i)))
+		if command == "" {
+			return nil, fmt.Errorf("rule %s is missing a command", strconv.Itoa(i+1))
+		}
+		rules = append(rules, SedRule{
+			Name:        name,
+			Description: strings.TrimSpace(r.FormValue(fmt.Sprintf("sed_rules[%d][description]", i))),
+			Command:     command,
+		})
+	}
+	return rules, nil
+}
 
-	if err := saveConfig(); err != nil {
+func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+	config.TagAliases = parseAliasesFromForm(r)
+
+	if err := SaveConfig(db, config); err != nil {
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
@@ -157,15 +148,9 @@ func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData Orphan
 }
 
 func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
-	newConfig := Config{
-		DatabasePath: strings.TrimSpace(r.FormValue("database_path")),
-		UploadDir:    strings.TrimSpace(r.FormValue("upload_dir")),
-		ServerPort:   strings.TrimSpace(r.FormValue("server_port")),
-		InstanceName: strings.TrimSpace(r.FormValue("instance_name")),
-		GallerySize:  strings.TrimSpace(r.FormValue("gallery_size")),
-		ItemsPerPage: strings.TrimSpace(r.FormValue("items_per_page")),
-		TagAliases:   config.TagAliases, // Preserve existing aliases
-	}
+	newConfig := config // preserve runtime fields
+	newConfig.GallerySize = strings.TrimSpace(r.FormValue("gallery_size"))
+	newConfig.ItemsPerPage = strings.TrimSpace(r.FormValue("items_per_page"))
 
 	if err := validateConfig(newConfig); err != nil {
 		data := currentAdminState(r, orphanData, missingThumbnails)
@@ -174,12 +159,9 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData Orpha
 		return
 	}
 
-	needsRestart := newConfig.DatabasePath != config.DatabasePath ||
-		newConfig.ServerPort != config.ServerPort
-
 	config = newConfig
 
-	if err := saveConfig(); err != nil {
+	if err := SaveConfig(db, config); err != nil {
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
@@ -187,30 +169,22 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData Orpha
 	}
 
 	data := currentAdminState(r, orphanData, missingThumbnails)
-	if needsRestart {
-		data.Success = "Settings saved successfully! Please restart the server for database/port changes to take effect."
-	} else {
-		data.Success = "Settings saved successfully!"
-	}
+	data.Success = "Settings saved successfully!"
 	renderAdminPage(w, r, data)
 }
 
 func handleSaveSedRules(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
-	sedRulesJSON := r.FormValue("sed_rules_json")
-
-	var sedRules []SedRule
-	if sedRulesJSON != "" {
-		if err := json.Unmarshal([]byte(sedRulesJSON), &sedRules); err != nil {
-			data := currentAdminState(r, orphanData, missingThumbnails)
-			data.Error = "Invalid sed rules JSON: " + err.Error()
-			renderAdminPage(w, r, data)
-			return
-		}
+	rules, err := parseSedRulesFromForm(r)
+	if err != nil {
+		data := currentAdminState(r, orphanData, missingThumbnails)
+		data.Error = err.Error()
+		renderAdminPage(w, r, data)
+		return
 	}
 
-	config.SedRules = sedRules
+	config.SedRules = rules
 
-	if err := saveConfig(); err != nil {
+	if err := SaveConfig(db, config); err != nil {
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)

@@ -2,10 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"flag"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 var (
@@ -15,22 +18,40 @@ var (
 )
 
 func main() {
-	// Load configuration
-	if err := loadConfig(); err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+	// CLI flags
+	dataDir := flag.String("d", ".", "Data directory (stores tagliatelle.db and uploads/ subfolder)")
+	port := flag.String("p", "8080", "Port to listen on")
+	flag.Parse()
+
+	// Derive paths from -d
+	dbPath := filepath.Join(*dataDir, "tagliatelle.db")
+	uploadDir := filepath.Join(*dataDir, "uploads")
+	serverPort := fmt.Sprintf(":%s", *port)
+
+	// Create necessary directories
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		log.Fatalf("Failed to create upload directory: %v", err)
 	}
+	os.MkdirAll("static", 0755)
 
 	// Initialize database
 	var err error
-	db, err = InitDatabase(config.DatabasePath)
+	db, err = InitDatabase(dbPath)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer db.Close()
 
-	// Create necessary directories
-	os.MkdirAll(config.UploadDir, 0755)
-	os.MkdirAll("static", 0755)
+	// Load config from database (gallery size, items per page, aliases, sed rules)
+	config, err = LoadConfig(db)
+	if err != nil {
+		log.Fatalf("Failed to load config from database: %v", err)
+	}
+
+	// Inject runtime values (not stored in DB)
+	config.DatabasePath = dbPath
+	config.UploadDir = uploadDir
+	config.ServerPort = serverPort
 
 	// Initialize templates
 	tmpl, err = InitTemplates()

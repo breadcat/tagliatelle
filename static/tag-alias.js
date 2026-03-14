@@ -93,17 +93,35 @@ function updateAlias(groupIndex, aliasIndex, value) {
 }
 
 document.getElementById('aliases-form').addEventListener('submit', function(e) {
-    // Filter out empty groups and aliases
+    // Filter out incomplete groups (need a category and at least 2 aliases)
     const cleanedGroups = aliasGroups
         .filter(group => group.category && group.aliases && group.aliases.length > 0)
         .map(group => ({
             category: group.category.trim(),
             aliases: group.aliases.filter(a => a && a.trim()).map(a => a.trim())
         }))
-        .filter(group => group.aliases.length >= 2); // Need at least 2 values to be an alias
+        .filter(group => group.aliases.length >= 2);
 
-    document.getElementById('aliases_json').value = JSON.stringify(cleanedGroups);
+    // Remove any previously-injected hidden fields from a prior submit
+    this.querySelectorAll('input[data-generated]').forEach(el => el.remove());
+
+    // Append one hidden field per value — no JSON
+    cleanedGroups.forEach((group, gi) => {
+        appendHidden(this, `aliases[${gi}][category]`, group.category);
+        group.aliases.forEach((alias, ai) => {
+            appendHidden(this, `aliases[${gi}][aliases][${ai}]`, alias);
+        });
+    });
 });
+
+function appendHidden(form, name, value) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    input.dataset.generated = '1';
+    form.appendChild(input);
+}
 
 // Initial render
 document.addEventListener('DOMContentLoaded', function() {
