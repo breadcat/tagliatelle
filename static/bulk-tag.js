@@ -114,4 +114,56 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
   });
+
+  // Hover previews for recent images
+  const IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp)$/i;
+
+  const tooltip = document.createElement('div');
+  tooltip.id = 'thumb-tooltip';
+  Object.assign(tooltip.style, {
+    position: 'fixed',
+    display: 'none',
+    pointerEvents: 'none',
+    zIndex: '9999',
+    border: '1px solid #888',
+    background: '#fff',
+    padding: '3px',
+    borderRadius: '4px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+  });
+  const tooltipImg = document.createElement('img');
+  tooltipImg.style.maxWidth = '200px';
+  tooltipImg.style.maxHeight = '200px';
+  tooltipImg.style.display = 'block';
+  tooltip.appendChild(tooltipImg);
+  document.body.appendChild(tooltip);
+
+  document.querySelectorAll('.file-item a').forEach(function (link) {
+    const filename = link.title || link.textContent.trim();
+    if (!IMAGE_EXTENSIONS.test(filename)) return;
+
+    const thumbUrl = '/uploads/' + filename;
+
+    link.addEventListener('mouseenter', function () {
+      tooltipImg.src = thumbUrl;
+      tooltip.style.display = 'block';
+    });
+
+    link.addEventListener('mousemove', function (e) {
+      const pad = 16;
+      const tw = tooltip.offsetWidth;
+      const th = tooltip.offsetHeight;
+      let x = e.clientX + pad;
+      let y = e.clientY + pad;
+      if (x + tw > window.innerWidth)  x = e.clientX - tw - pad;
+      if (y + th > window.innerHeight) y = e.clientY - th - pad;
+      tooltip.style.left = x + 'px';
+      tooltip.style.top  = y + 'px';
+    });
+
+    link.addEventListener('mouseleave', function () {
+      tooltip.style.display = 'none';
+      tooltipImg.src = '';
+    });
+  });
 });
