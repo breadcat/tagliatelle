@@ -28,12 +28,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const fileRangeField = document.getElementById('file_range');
     const tagQueryField = document.getElementById('tag_query');
 
+    if (isRangeMode && tagQueryField && fileRangeField && !fileRangeField.value && tagQueryField.value) {
+      fileRangeField.value = tagQueryField.value;
+    } else if (!isRangeMode && fileRangeField && tagQueryField && !tagQueryField.value && fileRangeField.value) {
+      tagQueryField.value = fileRangeField.value;
+    }
+
     if (rangeSelection) rangeSelection.style.display = isRangeMode ? 'block' : 'none';
     if (tagSelection) tagSelection.style.display = isRangeMode ? 'none' : 'block';
 
     // Update required attributes
     if (fileRangeField) fileRangeField.required = isRangeMode;
     if (tagQueryField) tagQueryField.required = !isRangeMode;
+
+    if (isRangeMode && fileRangeField) {
+      fileRangeField.focus();
+    } else if (!isRangeMode && tagQueryField) {
+      tagQueryField.focus();
+    }
   }
 
   // Set up event listeners for operation radio buttons
