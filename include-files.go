@@ -23,7 +23,7 @@ func fileRouter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(parts) >= 5 && parts[3] == "tag" && parts[4] == "delete" {
+	if len(parts) >= 7 && parts[3] == "tag" {
 		tagActionHandler(w, r, parts)
 		return
 	}
@@ -55,6 +55,11 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 
 	if _, err = tx.Exec("DELETE FROM file_tags WHERE file_id=?", fileID); err != nil {
 		renderError(w, "Failed to delete file tags", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err = tx.Exec("DELETE FROM file_properties WHERE file_id=?", fileID); err != nil {
+		renderError(w, "Failed to delete file properties", http.StatusInternalServerError)
 		return
 	}
 
