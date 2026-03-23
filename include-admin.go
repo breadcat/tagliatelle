@@ -201,8 +201,14 @@ func backupDatabase(dbPath string) error {
 		return fmt.Errorf("database path not configured")
 	}
 
+	backupDir := filepath.Join(filepath.Dir(dbPath), "backups")
+	if err := os.MkdirAll(backupDir, 0755); err != nil {
+		return fmt.Errorf("failed to create backups directory: %w", err)
+	}
+
+	dbName := strings.TrimSuffix(filepath.Base(dbPath), filepath.Ext(dbPath))
 	timestamp := time.Now().Format("20060102_150405")
-	backupPath := fmt.Sprintf("%s_backup_%s.db", strings.TrimSuffix(dbPath, filepath.Ext(dbPath)), timestamp)
+	backupPath := filepath.Join(backupDir, fmt.Sprintf("%s_backup_%s.db", dbName, timestamp))
 
 	input, err := os.Open(dbPath)
 	if err != nil {
