@@ -289,7 +289,12 @@ func processVideoFile(tempPath, finalPath string) (string, string, error) {
 }
 
 func saveFileToDatabase(filename, path string) (int64, error) {
-	res, err := db.Exec("INSERT INTO files (filename, path, description) VALUES (?, ?, '')", filename, path)
+	relPath, err := filepath.Rel(config.UploadDir, path)
+	if err != nil {
+		return 0, fmt.Errorf("failed to compute relative path: %v", err)
+	}
+
+	res, err := db.Exec("INSERT INTO files (filename, path, description) VALUES (?, ?, '')", filename, relPath)
 	if err != nil {
 		return 0, fmt.Errorf("failed to save file to database: %v", err)
 	}
