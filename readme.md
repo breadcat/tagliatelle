@@ -36,7 +36,6 @@ Then access the server via a web browser, the default port is 8080.
 ## Limitations
 * SQLite requires cgo, which requires gcc. Build/run with `CGO_ENABLED=1`
 * Database deletions get reserved so you won't have sequential file ID's
-* Paths are stored absolutely, not relatively, so moving your file store requires manual intervention
 
 ## Credits
 * [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3) for the go SQLite3 library
