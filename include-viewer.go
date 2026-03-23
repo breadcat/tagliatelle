@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"html"
 	"net"
 	"net/http"
 	"net/url"
@@ -167,29 +168,28 @@ func getLocalIP() (string, error) {
 }
 
 func tagActionHandler(w http.ResponseWriter, r *http.Request, parts []string) {
-    fileID := parts[2]
+	fileID := parts[2]
 
-    if r.Method != http.MethodPost {
-        http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
-        return
-    }
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
+		return
+	}
 
-    cat := strings.TrimSpace(r.FormValue("category"))
-    val := strings.TrimSpace(r.FormValue("value"))
+	cat := strings.TrimSpace(html.UnescapeString(r.FormValue("category")))
+	val := strings.TrimSpace(html.UnescapeString(r.FormValue("value")))
 
-    if cat != "" && val != "" {
-        var tagID int
-        db.QueryRow(`
-            SELECT t.id
-            FROM tags t
-            JOIN categories c ON c.id=t.category_id
-            WHERE c.name=? AND t.value=?`, cat, val).Scan(&tagID)
-        if tagID != 0 {
-            db.Exec("DELETE FROM file_tags WHERE file_id=? AND tag_id=?", fileID, tagID)
-        }
-    }
-
-    http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
+	if cat != "" && val != "" {
+		var tagID int
+		db.QueryRow(`
+			SELECT t.id
+			FROM tags t
+			JOIN categories c ON c.id=t.category_id
+			WHERE c.name=? AND t.value=?`, cat, val).Scan(&tagID)
+		if tagID != 0 {
+			db.Exec("DELETE FROM file_tags WHERE file_id=? AND tag_id=?", fileID, tagID)
+		}
+	}
+	http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
 }
 
 func getOrCreateCategoryAndTag(category, value string) (int, int, error) {

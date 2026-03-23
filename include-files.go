@@ -23,7 +23,7 @@ func fileRouter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(parts) >= 7 && parts[3] == "tag" {
+	if len(parts) >= 5 && parts[3] == "tag" && parts[4] == "delete" {
 		tagActionHandler(w, r, parts)
 		return
 	}
