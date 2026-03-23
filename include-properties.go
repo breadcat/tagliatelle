@@ -154,10 +154,11 @@ func computeMissingProperties() (int, error) {
 
 func getPropertyNav() (map[string][]PropertyDisplay, error) {
 	rows, err := db.Query(`
-		SELECT key, value, COUNT(*) as cnt
-		FROM file_properties
-		GROUP BY key, value
-		ORDER BY key, value
+		SELECT fp.key, fp.value, COUNT(*) as cnt
+		FROM file_properties fp
+		JOIN files f ON f.id = fp.file_id
+		GROUP BY fp.key, fp.value
+		ORDER BY fp.key, fp.value
 	`)
 	if err != nil {
 		return nil, err
