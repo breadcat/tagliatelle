@@ -42,29 +42,6 @@
     <h2>Settings</h2>
     <form method="post" style="max-width: 600px;">
         <input type="hidden" name="active_tab" value="settings">
-        <div style="margin-bottom: 20px;">
-            <label for="database_path" style="display: block; font-weight: bold; margin-bottom: 5px;">Database Path:</label>
-            <input type="text" id="database_path" name="database_path" value="{{.Data.Config.DatabasePath}}" required
-                   style="width: 100%; padding: 8px; font-size: 14px;"
-                   placeholder="./database.db">
-            <small style="color: #666;">Path to SQLite database file (requires restart if changed)</small>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label for="upload_dir" style="display: block; font-weight: bold; margin-bottom: 5px;">Upload Directory:</label>
-            <input type="text" id="upload_dir" name="upload_dir" value="{{.Data.Config.UploadDir}}" required
-                   style="width: 100%; padding: 8px; font-size: 14px;"
-                   placeholder="uploads">
-            <small style="color: #666;">Directory where uploaded files are stored</small>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label for="server_port" style="display: block; font-weight: bold; margin-bottom: 5px;">Server Port:</label>
-            <input type="text" id="server_port" name="server_port" value="{{.Data.Config.ServerPort}}" required
-                   style="width: 100%; padding: 8px; font-size: 14px;"
-                   placeholder=":8080">
-            <small style="color: #666;">Port for web server (format: :8080, requires restart if changed)</small>
-        </div>
 
         <div style="margin-bottom: 20px;">
             <label for="gallery_size" style="display: block; font-weight: bold; margin-bottom: 5px;">Gallery Size:</label>
@@ -98,8 +75,9 @@
             <li><strong>Items per Page:</strong> {{.Data.Config.ItemsPerPage}}</li>
         </ul>
 
-        <h4>Configuration File:</h4>
-        <p>Settings are stored in <code>config.json</code> in the application directory.</p>
+        <h4>Configuration:</h4>
+        <p>Working directory is specified via the <code>-d</code> flag on launch.</p>
+        <p>Webserver port is specified via the <code>-p</code> flag on launch.</p>
     </div>
     </div>
 </div>
