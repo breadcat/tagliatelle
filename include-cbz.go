@@ -297,7 +297,7 @@ func cbzViewerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cbzPath := filepath.Join(config.UploadDir, f.Filename)
+	cbzPath := filepath.Join(config.UploadDir, f.Path)
 
 	// Check if requesting a specific image
 	if len(parts) >= 3 && parts[1] == "image" {

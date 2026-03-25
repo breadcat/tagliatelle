@@ -73,7 +73,7 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		return
 	}
 
-	if err = os.Remove(currentFile.Path); err != nil {
+	if err = os.Remove(filepath.Join(config.UploadDir, currentFile.Path)); err != nil {
 		log.Printf("Warning: Failed to delete physical file %s: %v", currentFile.Path, err)
 	}
 
