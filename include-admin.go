@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -248,17 +247,12 @@ func backupDatabase(dbPath string) error {
 	return nil
 }
 
-func vacuumDatabase(dbPath string) error {
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	defer db.Close()
-
-	if _, err = db.Exec("VACUUM;"); err != nil {
+func vacuumDatabase() error {
+	if _, err := db.Exec("VACUUM;"); err != nil {
 		return fmt.Errorf("VACUUM failed: %w", err)
 	}
 
+	log.Printf("Info: vacuumDatabase: VACUUM completed successfully")
 	return nil
 }
 
