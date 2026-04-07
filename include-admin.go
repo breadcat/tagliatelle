@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -50,10 +51,16 @@ func validateConfig(newConfig Config) error {
 
 func adminHandler(w http.ResponseWriter, r *http.Request) {
 	// Get orphaned files
-	orphanData, _ := getOrphanedFiles(config.UploadDir)
+	orphanData, err := getOrphanedFiles(config.UploadDir)
+	if err != nil {
+		log.Printf("Warning: adminHandler: failed to get orphaned files: %v", err)
+	}
 
 	// Get video files for thumbnails
-	missingThumbnails, _ := getMissingThumbnailVideos()
+	missingThumbnails, err := getMissingThumbnailVideos()
+	if err != nil {
+		log.Printf("Warning: adminHandler: failed to get missing thumbnails: %v", err)
+	}
 
 	switch r.Method {
 	case http.MethodPost:
@@ -63,13 +70,19 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 
 		case "backup":
 			err := backupDatabase(config.DatabasePath)
+			if err != nil {
+				log.Printf("Error: adminHandler: database backup failed: %v", err)
+			}
 			data := currentAdminState(r, orphanData, missingThumbnails)
 			data.Error = errorString(err)
 			data.Success = successString(err, "Database backup created successfully!")
 			renderAdminPage(w, r, data)
 
 		case "vacuum":
-			err := vacuumDatabase(config.DatabasePath)
+			err := vacuumDatabase()
+			if err != nil {
+				log.Printf("Error: adminHandler: database vacuum failed: %v", err)
+			}
 			data := currentAdminState(r, orphanData, missingThumbnails)
 			data.Error = errorString(err)
 			data.Success = successString(err, "Database vacuum completed successfully!")
@@ -107,6 +120,8 @@ func parseAliasesFromForm(r *http.Request) []TagAliasGroup {
 		}
 		if len(aliases) >= 2 {
 			groups = append(groups, TagAliasGroup{Category: category, Aliases: aliases})
+		} else {
+			log.Printf("Warning: parseAliasesFromForm: alias group for category %q has fewer than 2 aliases (%d) and was discarded", category, len(aliases))
 		}
 	}
 	return groups
@@ -136,6 +151,7 @@ func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData Orphan
 	config.TagAliases = parseAliasesFromForm(r)
 
 	if err := SaveConfig(db, config); err != nil {
+		log.Printf("Error: handleSaveAliases: failed to save configuration: %v", err)
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
@@ -162,6 +178,7 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData Orpha
 	config = newConfig
 
 	if err := SaveConfig(db, config); err != nil {
+		log.Printf("Error: handleSaveSettings: failed to save configuration: %v", err)
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
@@ -185,6 +202,7 @@ func handleSaveSedRules(w http.ResponseWriter, r *http.Request, orphanData Orpha
 	config.SedRules = rules
 
 	if err := SaveConfig(db, config); err != nil {
+		log.Printf("Error: handleSaveSedRules: failed to save configuration: %v", err)
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
@@ -226,6 +244,7 @@ func backupDatabase(dbPath string) error {
 		return fmt.Errorf("failed to copy database: %w", err)
 	}
 
+	log.Printf("Info: backupDatabase: backup written to %s", backupPath)
 	return nil
 }
 

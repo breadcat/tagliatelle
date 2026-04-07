@@ -70,14 +70,14 @@ func generateCBZThumbnail(cbzPath, uploadDir, filename string) error {
 	for _, f := range selectedFiles {
 		rc, err := f.Open()
 		if err != nil {
-			log.Printf("CBZ Thumbnail: Failed to open %s: %v", f.Name, err)
+			log.Printf("Warning: generateCBZThumbnail: failed to open %s: %v", f.Name, err)
 			continue
 		}
 
 		img, _, err := image.Decode(rc)
 		rc.Close()
 		if err != nil {
-			log.Printf("CBZ Thumbnail: Failed to decode %s: %v", f.Name, err)
+			log.Printf("Warning: generateCBZThumbnail: failed to decode %s: %v", f.Name, err)
 			continue
 		}
 		images = append(images, img)
@@ -293,6 +293,7 @@ func cbzViewerHandler(w http.ResponseWriter, r *http.Request) {
 	err := db.QueryRow("SELECT id, filename, path, COALESCE(description, '') FROM files WHERE id = ?", fileID).
 		Scan(&f.ID, &f.Filename, &f.Path, &f.Description)
 	if err != nil {
+		log.Printf("Error: cbzViewerHandler: file not found for id=%s: %v", fileID, err)
 		renderError(w, "File not found", http.StatusNotFound)
 		return
 	}
@@ -305,6 +306,7 @@ func cbzViewerHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Sscanf(parts[2], "%d", &imageIndex)
 
 		if err := serveCBZImage(w, cbzPath, imageIndex); err != nil {
+			log.Printf("Error: cbzViewerHandler: failed to serve image index %d from %s: %v", imageIndex, cbzPath, err)
 			renderError(w, "Failed to serve image", http.StatusInternalServerError)
 		}
 		return
@@ -313,6 +315,7 @@ func cbzViewerHandler(w http.ResponseWriter, r *http.Request) {
 	// Get list of images
 	images, err := getCBZImages(cbzPath)
 	if err != nil {
+		log.Printf("Error: cbzViewerHandler: failed to read CBZ contents at %s: %v", cbzPath, err)
 		renderError(w, "Failed to read CBZ contents", http.StatusInternalServerError)
 		return
 	}

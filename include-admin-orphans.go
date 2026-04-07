@@ -1,6 +1,7 @@
 package main
 
 import (
+    "log"
     "net/http"
     "os"
 )
@@ -44,6 +45,7 @@ func getOrphanedFiles(uploadDir string) (OrphanData, error) {
 func orphansHandler(w http.ResponseWriter, r *http.Request) {
 	orphanData, err := getOrphanedFiles(config.UploadDir)
 	if err != nil {
+		log.Printf("Error: orphansHandler: failed to read orphaned files: %v", err)
 		renderError(w, "Error reading orphaned files", http.StatusInternalServerError)
 		return
 	}

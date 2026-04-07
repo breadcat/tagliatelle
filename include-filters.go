@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -11,7 +12,10 @@ func untaggedFilesHandler(w http.ResponseWriter, r *http.Request) {
 	page := pageFromRequest(r)
 	perPage := perPageFromConfig(50)
 
-	files, total, _ := getUntaggedFilesPaginated(page, perPage)
+	files, total, err := getUntaggedFilesPaginated(page, perPage)
+	if err != nil {
+		log.Printf("Error: untaggedFilesHandler: failed to get untagged files: %v", err)
+	}
 	pageData := buildPageDataWithPagination("Untagged Files", files, page, total, perPage, r)
 	renderTemplate(w, "untagged.html", pageData)
 }
@@ -93,6 +97,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 		// Handle preview mode
 		files, err := getPreviewFiles(filters)
 		if err != nil {
+			log.Printf("Error: tagFilterHandler: failed to fetch preview files: %v", err)
 			renderError(w, "Failed to fetch preview files", http.StatusInternalServerError)
 			return
 		}
@@ -155,6 +160,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 	var total int
 	err := db.QueryRow(countQuery, countArgs...).Scan(&total)
 	if err != nil {
+		log.Printf("Error: tagFilterHandler: failed to count files: %v", err)
 		renderError(w, "Failed to count files", http.StatusInternalServerError)
 		return
 	}
@@ -203,6 +209,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 
 	files, err := queryFilesWithTags(query, args...)
 	if err != nil {
+		log.Printf("Error: tagFilterHandler: failed to fetch files: %v", err)
 		renderError(w, "Failed to fetch files", http.StatusInternalServerError)
 		return
 	}

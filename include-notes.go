@@ -231,8 +231,8 @@ func CountLines(content string) int {
 func notesViewHandler(w http.ResponseWriter, r *http.Request) {
 	content, err := GetNotes(db)
 	if err != nil {
+		log.Printf("Error: notesViewHandler: failed to load notes: %v", err)
 		http.Error(w, "Failed to load notes", http.StatusInternalServerError)
-		log.Printf("Error loading notes: %v", err)
 		return
 	}
 
@@ -254,8 +254,8 @@ func notesViewHandler(w http.ResponseWriter, r *http.Request) {
 	pageData := buildPageData("Notes", notesData)
 
 	if err := tmpl.ExecuteTemplate(w, "notes.html", pageData); err != nil {
+		log.Printf("Error: notesViewHandler: template error: %v", err)
 		http.Error(w, "Template error", http.StatusInternalServerError)
-		log.Printf("Template error: %v", err)
 	}
 }
 
@@ -270,8 +270,8 @@ func notesSaveHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Process (deduplicate and sort) before saving
 	if err := SaveNotes(db, content); err != nil {
+		log.Printf("Error: notesSaveHandler: failed to save notes: %v", err)
 		http.Error(w, "Failed to save notes", http.StatusInternalServerError)
-		log.Printf("Error saving notes: %v", err)
 		return
 	}
 
@@ -287,6 +287,7 @@ func notesSaveHandler(w http.ResponseWriter, r *http.Request) {
 func notesFilterHandler(w http.ResponseWriter, r *http.Request) {
 	content, err := GetNotes(db)
 	if err != nil {
+		log.Printf("Error: notesFilterHandler: failed to load notes: %v", err)
 		http.Error(w, "Failed to load notes", http.StatusInternalServerError)
 		return
 	}
@@ -312,6 +313,7 @@ func notesFilterHandler(w http.ResponseWriter, r *http.Request) {
 func notesStatsHandler(w http.ResponseWriter, r *http.Request) {
 	content, err := GetNotes(db)
 	if err != nil {
+		log.Printf("Error: notesStatsHandler: failed to load notes: %v", err)
 		http.Error(w, "Failed to load notes", http.StatusInternalServerError)
 		return
 	}
@@ -324,10 +326,10 @@ func notesStatsHandler(w http.ResponseWriter, r *http.Request) {
 
 // notesApplySedHandler applies a sed rule to the notes
 func notesApplySedHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("notesApplySedHandler called - Method: %s, Path: %s", r.Method, r.URL.Path)
+	log.Printf("Info: notesApplySedHandler called - Method: %s, Path: %s", r.Method, r.URL.Path)
 
 	if r.Method != http.MethodPost {
-		log.Printf("Wrong method: %s", r.Method)
+		log.Printf("Warning: notesApplySedHandler: wrong method: %s", r.Method)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -339,11 +341,11 @@ func notesApplySedHandler(w http.ResponseWriter, r *http.Request) {
 
 	content := r.FormValue("content")
 	ruleIndexStr := r.FormValue("rule_index")
-	log.Printf("Received: content length=%d, rule_index=%s", len(content), ruleIndexStr)
+	log.Printf("Info: notesApplySedHandler: content length=%d, rule_index=%s", len(content), ruleIndexStr)
 
 	ruleIndex, err := strconv.Atoi(ruleIndexStr)
 	if err != nil || ruleIndex < 0 || ruleIndex >= len(config.SedRules) {
-		log.Printf("Invalid rule index: %s (error: %v, len(rules)=%d)", ruleIndexStr, err, len(config.SedRules))
+		log.Printf("Warning: notesApplySedHandler: invalid rule index: %s (error: %v, len(rules)=%d)", ruleIndexStr, err, len(config.SedRules))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -354,10 +356,10 @@ func notesApplySedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rule := config.SedRules[ruleIndex]
-	log.Printf("Applying rule: %s (command: %s)", rule.Name, rule.Command)
+	log.Printf("Info: notesApplySedHandler: applying rule: %s (command: %s)", rule.Name, rule.Command)
 	result, err := ApplySedRule(content, rule.Command)
 	if err != nil {
-		log.Printf("Sed rule error: %v", err)
+		log.Printf("Error: notesApplySedHandler: sed rule error: %v", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -374,7 +376,7 @@ func notesApplySedHandler(w http.ResponseWriter, r *http.Request) {
 		"content": result,
 		"stats":   GetNoteStats(result),
 	}
-	log.Printf("Sed rule success, returning %d bytes", len(result))
+	log.Printf("Info: notesApplySedHandler: sed rule success, returning %d bytes", len(result))
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -403,6 +405,7 @@ func notesPreviewHandler(w http.ResponseWriter, r *http.Request) {
 func notesExportHandler(w http.ResponseWriter, r *http.Request) {
 	content, err := GetNotes(db)
 	if err != nil {
+		log.Printf("Error: notesExportHandler: failed to load notes: %v", err)
 		http.Error(w, "Failed to load notes", http.StatusInternalServerError)
 		return
 	}
@@ -421,6 +424,7 @@ func notesImportHandler(w http.ResponseWriter, r *http.Request) {
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
+		log.Printf("Warning: notesImportHandler: failed to read uploaded file: %v", err)
 		http.Error(w, "Failed to read file", http.StatusBadRequest)
 		return
 	}
@@ -429,6 +433,7 @@ func notesImportHandler(w http.ResponseWriter, r *http.Request) {
 	// Read file content
 	buf := new(strings.Builder)
 	if _, err := io.Copy(buf, file); err != nil {
+		log.Printf("Error: notesImportHandler: failed to read file content: %v", err)
 		http.Error(w, "Failed to read file", http.StatusInternalServerError)
 		return
 	}
@@ -440,12 +445,16 @@ func notesImportHandler(w http.ResponseWriter, r *http.Request) {
 
 	if mergeMode {
 		// Merge with existing content
-		existingContent, _ := GetNotes(db)
+		existingContent, err := GetNotes(db)
+		if err != nil {
+			log.Printf("Warning: notesImportHandler: failed to load existing notes for merge: %v", err)
+		}
 		content = existingContent + "\n" + content
 	}
 
 	// Save (will auto-process)
 	if err := SaveNotes(db, content); err != nil {
+		log.Printf("Error: notesImportHandler: failed to save imported notes: %v", err)
 		http.Error(w, "Failed to save notes", http.StatusInternalServerError)
 		return
 	}

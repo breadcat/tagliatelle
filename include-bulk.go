@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -84,7 +85,10 @@ func applyBulkTagOperations(fileIDs []int, category, value, operation string) er
 }
 
 func getBulkTagFormData() BulkTagFormData {
-	catRows, _ := db.Query("SELECT name FROM categories ORDER BY name")
+	catRows, err := db.Query("SELECT name FROM categories ORDER BY name")
+	if err != nil {
+		log.Printf("Error: getBulkTagFormData: failed to query categories: %v", err)
+	}
 	var cats []string
 	for catRows.Next() {
 		var c string
@@ -93,7 +97,10 @@ func getBulkTagFormData() BulkTagFormData {
 	}
 	catRows.Close()
 
-	recentRows, _ := db.Query("SELECT id, filename FROM files ORDER BY id DESC LIMIT 20")
+	recentRows, err := db.Query("SELECT id, filename FROM files ORDER BY id DESC LIMIT 20")
+	if err != nil {
+		log.Printf("Error: getBulkTagFormData: failed to query recent files: %v", err)
+	}
 	var recentFiles []File
 	for recentRows.Next() {
 		var f File

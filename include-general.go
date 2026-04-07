@@ -1,6 +1,7 @@
 package main
 
 import (
+    "log"
     "net/http"
     "net/url"
     "strings"
@@ -23,6 +24,7 @@ func renderError(w http.ResponseWriter, message string, statusCode int) {
 
 func renderTemplate(w http.ResponseWriter, tmplName string, data PageData) {
 	if err := tmpl.ExecuteTemplate(w, tmplName, data); err != nil {
+		log.Printf("Error: renderTemplate: failed to execute template %s: %v", tmplName, err)
 		renderError(w, "Template rendering failed", http.StatusInternalServerError)
 	}
 }

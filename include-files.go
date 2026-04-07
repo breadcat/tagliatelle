@@ -42,33 +42,39 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 	var currentFile File
 	err := db.QueryRow("SELECT id, filename, path FROM files WHERE id=?", fileID).Scan(&currentFile.ID, &currentFile.Filename, &currentFile.Path)
 	if err != nil {
+		log.Printf("Error: fileDeleteHandler: file not found for id=%s: %v", fileID, err)
 		renderError(w, "File not found", http.StatusNotFound)
 		return
 	}
 
 	tx, err := db.Begin()
 	if err != nil {
+		log.Printf("Error: fileDeleteHandler: failed to start transaction for file id=%s: %v", fileID, err)
 		renderError(w, "Failed to start transaction", http.StatusInternalServerError)
 		return
 	}
 	defer tx.Rollback()
 
 	if _, err = tx.Exec("DELETE FROM file_tags WHERE file_id=?", fileID); err != nil {
+		log.Printf("Error: fileDeleteHandler: failed to delete file_tags for file id=%s: %v", fileID, err)
 		renderError(w, "Failed to delete file tags", http.StatusInternalServerError)
 		return
 	}
 
 	if _, err = tx.Exec("DELETE FROM file_properties WHERE file_id=?", fileID); err != nil {
+		log.Printf("Error: fileDeleteHandler: failed to delete file_properties for file id=%s: %v", fileID, err)
 		renderError(w, "Failed to delete file properties", http.StatusInternalServerError)
 		return
 	}
 
 	if _, err = tx.Exec("DELETE FROM files WHERE id=?", fileID); err != nil {
+		log.Printf("Error: fileDeleteHandler: failed to delete files record for file id=%s: %v", fileID, err)
 		renderError(w, "Failed to delete file record", http.StatusInternalServerError)
 		return
 	}
 
 	if err = tx.Commit(); err != nil {
+		log.Printf("Error: fileDeleteHandler: failed to commit transaction for file id=%s: %v", fileID, err)
 		renderError(w, "Failed to commit transaction", http.StatusInternalServerError)
 		return
 	}
@@ -81,7 +87,7 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 	thumbPath := filepath.Join(config.UploadDir, "thumbnails", currentFile.Filename+".jpg")
 	if _, err := os.Stat(thumbPath); err == nil {
 		if err := os.Remove(thumbPath); err != nil {
-			log.Printf("Warning: Failed to delete thumbnail %s: %v", thumbPath, err)
+			log.Printf("Warning: fileDeleteHandler: failed to delete thumbnail %s: %v", thumbPath, err)
 		}
 	}
 
@@ -105,6 +111,7 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 	var currentFilename, currentPath string
 	err := db.QueryRow("SELECT filename, path FROM files WHERE id=?", fileID).Scan(&currentFilename, &currentPath)
 	if err != nil {
+		log.Printf("Error: fileRenameHandler: file not found for id=%s: %v", fileID, err)
 		renderError(w, "File not found", http.StatusNotFound)
 		return
 	}
@@ -160,6 +167,7 @@ func checkFileConflictStrict(filename string) (string, string, int64, error) {
 	if _, err := os.Stat(finalPath); err == nil {
 		existingID, dbErr := getFileIDByName(filename)
 		if dbErr != nil {
+			log.Printf("Warning: checkFileConflictStrict: file %s exists on disk but not in DB: %v", filename, dbErr)
 			return "", "", 0, fmt.Errorf("a file with that name already exists")
 		}
 		return "", "", existingID, nil

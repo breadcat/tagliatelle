@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"html"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -43,6 +44,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 	var f File
 	err := db.QueryRow("SELECT id, filename, path, COALESCE(description, '') as description FROM files WHERE id=?", idStr).Scan(&f.ID, &f.Filename, &f.Path, &f.Description)
 	if err != nil {
+		log.Printf("Error: fileHandler: file not found for id=%s: %v", idStr, err)
 		renderError(w, "File not found", http.StatusNotFound)
 		return
 	}
@@ -69,6 +71,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if _, err := db.Exec("UPDATE files SET description = ? WHERE id = ?", description, f.ID); err != nil {
+				log.Printf("Error: fileHandler: failed to update description for file id=%d: %v", f.ID, err)
 				renderError(w, "Failed to update description", http.StatusInternalServerError)
 				return
 			}
@@ -106,13 +109,16 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	catRows, _ := db.Query(`
+	catRows, err := db.Query(`
 		SELECT DISTINCT c.name
 		FROM categories c
 		JOIN tags t ON t.category_id = c.id
 		JOIN file_tags ft ON ft.tag_id = t.id
 		ORDER BY c.name
 	`)
+	if err != nil {
+		log.Printf("Warning: fileHandler: failed to query categories for file id=%d: %v", f.ID, err)
+	}
 	var cats []string
 	for catRows.Next() {
 		var c string
@@ -121,11 +127,14 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	catRows.Close()
 
-	propRows, _ := db.Query(`
+	propRows, err := db.Query(`
 		SELECT key, value FROM file_properties
 		WHERE file_id = ?
 		ORDER BY key, value
 	`, f.ID)
+	if err != nil {
+		log.Printf("Warning: fileHandler: failed to query properties for file id=%d: %v", f.ID, err)
+	}
 	fileProps := make(map[string]string)
 	for propRows.Next() {
 		var k, v string
@@ -146,7 +155,10 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 
 func buildPageDataWithIP(title string, data interface{}) PageData {
 	pageData := buildPageData(title, data)
-	ip, _ := getLocalIP()
+	ip, err := getLocalIP()
+	if err != nil {
+		log.Printf("Warning: buildPageDataWithIP: could not determine local IP: %v", err)
+	}
 	pageData.IP = ip
 	pageData.Port = strings.TrimPrefix(config.ServerPort, ":")
 	return pageData
