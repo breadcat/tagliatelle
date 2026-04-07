@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"io"
 	"log"
 	"net/http"
-	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -64,7 +64,6 @@ func generateCBZThumbnail(cbzPath, uploadDir, filename string) error {
 		}
 	}
 
-
 	// Load the selected images
 	var images []image.Image
 	for _, f := range selectedFiles {
@@ -82,7 +81,6 @@ func generateCBZThumbnail(cbzPath, uploadDir, filename string) error {
 		}
 		images = append(images, img)
 	}
-
 
 	if len(images) == 0 {
 		return fmt.Errorf("failed to decode any images from CBZ")
