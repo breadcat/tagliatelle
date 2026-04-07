@@ -182,24 +182,9 @@ func generateThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateThumbnail(videoPath, uploadDir, filename string) error {
-	thumbDir := filepath.Join(uploadDir, "thumbnails")
-	if err := os.MkdirAll(thumbDir, 0755); err != nil {
-		return fmt.Errorf("failed to create thumbnails directory: %v", err)
-	}
-
-	thumbPath := filepath.Join(thumbDir, filename+".jpg")
-
-	cmd := exec.Command("ffmpeg", "-y", "-ss", "00:00:05", "-i", videoPath, "-vframes", "1", "-vf", "scale=400:-1", thumbPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		cmd := exec.Command("ffmpeg", "-y", "-i", videoPath, "-vframes", "1", "-vf", "scale=400:-1", thumbPath)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err2 := cmd.Run(); err2 != nil {
-			return fmt.Errorf("failed to generate thumbnail: %v", err2)
-		}
+	if err := generateThumbnailAtTime(videoPath, uploadDir, filename, "00:00:05"); err != nil {
+		log.Printf("Warning: generateThumbnail: seek to 5s failed for %s, retrying from start: %v", filename, err)
+		return generateThumbnailAtTime(videoPath, uploadDir, filename, "00:00:00")
 	}
 
 	return nil
