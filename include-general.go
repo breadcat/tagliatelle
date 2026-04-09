@@ -52,8 +52,14 @@ func successString(err error, msg string) string {
 }
 
 func buildPageData(title string, data interface{}) PageData {
-	tagMap, _ := getTagData()
-	propMap, _ := getPropertyNav()
+	tagMap, err := getTagData()
+	if err != nil {
+		log.Printf("Warning: buildPageData: failed to load tag data for page %q: %v", title, err)
+	}
+	propMap, err := getPropertyNav()
+	if err != nil {
+		log.Printf("Warning: buildPageData: failed to load property nav for page %q: %v", title, err)
+	}
 	return PageData{
 		Title:       title,
 		Data:        data,
@@ -81,8 +87,14 @@ func getTagData() (map[string][]TagDisplay, error) {
 	for rows.Next() {
 		var cat, val string
 		var count int
-		rows.Scan(&cat, &val, &count)
+		if err := rows.Scan(&cat, &val, &count); err != nil {
+			log.Printf("Warning: getTagData: failed to scan row: %v", err)
+			continue
+		}
 		tagMap[cat] = append(tagMap[cat], TagDisplay{Value: val, Count: count})
+	}
+	if err := rows.Err(); err != nil {
+		return tagMap, err
 	}
 	return tagMap, nil
 }
