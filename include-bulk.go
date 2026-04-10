@@ -355,10 +355,24 @@ func getFileIDsFromANDQuery(query string) ([]int, error) {
 
 // getFileIDsFromORQuery handles OR-separated tags
 func getFileIDsFromORQuery(query string) ([]int, error) {
-	tagPairs := strings.Split(strings.ToUpper(query), " OR ")
-	var tags []TagPair
+	// Split on " OR " case-insensitively by working on the uppercased copy for
+	// index finding, but extracting substrings from the original query.
+	upperQuery := strings.ToUpper(query)
+	const sep = " OR "
+	var rawPairs []string
+	start := 0
+	for {
+		idx := strings.Index(upperQuery[start:], sep)
+		if idx < 0 {
+			rawPairs = append(rawPairs, query[start:])
+			break
+		}
+		rawPairs = append(rawPairs, query[start:start+idx])
+		start += idx + len(sep)
+	}
 
-	for _, pair := range tagPairs {
+	var tags []TagPair
+	for _, pair := range rawPairs {
 		pair = strings.TrimSpace(pair)
 		if pair == "" {
 			continue
