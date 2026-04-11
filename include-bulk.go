@@ -90,24 +90,28 @@ func getBulkTagFormData() BulkTagFormData {
 		log.Printf("Error: getBulkTagFormData: failed to query categories: %v", err)
 	}
 	var cats []string
-	for catRows.Next() {
-		var c string
-		catRows.Scan(&c)
-		cats = append(cats, c)
+	if catRows != nil {
+		for catRows.Next() {
+			var c string
+			catRows.Scan(&c)
+			cats = append(cats, c)
+		}
+		catRows.Close()
 	}
-	catRows.Close()
 
 	recentRows, err := db.Query("SELECT id, filename FROM files ORDER BY id DESC LIMIT 20")
 	if err != nil {
 		log.Printf("Error: getBulkTagFormData: failed to query recent files: %v", err)
 	}
 	var recentFiles []File
-	for recentRows.Next() {
-		var f File
-		recentRows.Scan(&f.ID, &f.Filename)
-		recentFiles = append(recentFiles, f)
+	if recentRows != nil {
+		for recentRows.Next() {
+			var f File
+			recentRows.Scan(&f.ID, &f.Filename)
+			recentFiles = append(recentFiles, f)
+		}
+		recentRows.Close()
 	}
-	recentRows.Close()
 
 	return BulkTagFormData{
 		Categories:  cats,
