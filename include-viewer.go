@@ -34,6 +34,38 @@ func getPreviousTagValue(category string, excludeFileID int) (string, error) {
 	return value, nil
 }
 
+func getPreviousFileTags(excludeFileID int) ([]struct{ cat, val string }, error) {
+	rows, err := db.Query(`
+		SELECT c.name, t.value
+		FROM tags t
+		JOIN categories c ON c.id = t.category_id
+		JOIN file_tags ft ON ft.tag_id = t.id
+		WHERE ft.file_id = (
+			SELECT file_id FROM file_tags
+			WHERE file_id != ?
+			ORDER BY rowid DESC
+			LIMIT 1
+		)
+	`, excludeFileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tags []struct{ cat, val string }
+	for rows.Next() {
+		var cat, val string
+		if err := rows.Scan(&cat, &val); err != nil {
+			return nil, err
+		}
+		tags = append(tags, struct{ cat, val string }{cat, val})
+	}
+	if len(tags) == 0 {
+		return nil, fmt.Errorf("no tags found on previous file")
+	}
+	return tags, nil
+}
+
 func fileHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/file/")
 	if strings.Contains(idStr, "/") {
@@ -86,6 +118,26 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		cat := strings.TrimSpace(r.FormValue("category"))
 		val := strings.TrimSpace(r.FormValue("value"))
+
+		if cat == "!" {
+			prevTags, err := getPreviousFileTags(f.ID)
+			if err != nil {
+				http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Could not copy tags from previous file: "+err.Error()), http.StatusSeeOther)
+				return
+			}
+			for _, tag := range prevTags {
+				_, tagID, err := getOrCreateCategoryAndTag(tag.cat, tag.val)
+				if err != nil {
+					log.Printf("Error: fileHandler: failed to create tag %s:%s while copying from previous file for file id=%d: %v", tag.cat, tag.val, f.ID, err)
+					continue
+				}
+				if _, err = db.Exec("INSERT OR IGNORE INTO file_tags(file_id, tag_id) VALUES (?, ?)", f.ID, tagID); err != nil {
+					log.Printf("Error: fileHandler: failed to add tag %s:%s to file id=%d: %v", tag.cat, tag.val, f.ID, err)
+				}
+			}
+			http.Redirect(w, r, "/file/"+idStr+"?success="+url.QueryEscape(fmt.Sprintf("Copied %d tag(s) from previous file", len(prevTags))), http.StatusSeeOther)
+			return
+		}
 
 		if cat == "" || val == "" {
 			http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Category and value must not be empty"), http.StatusSeeOther)
