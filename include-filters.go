@@ -20,6 +20,47 @@ func untaggedFilesHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "untagged.html", pageData)
 }
 
+func buildTagFilterWhere(filters []filter) (string, []interface{}) {
+	where := " WHERE 1=1"
+	var args []interface{}
+
+	for _, f := range filters {
+		if f.Value == "unassigned" {
+			where += `
+				AND NOT EXISTS (
+					SELECT 1
+					FROM file_tags ft
+					JOIN tags t ON ft.tag_id = t.id
+					JOIN categories c ON c.id = t.category_id
+					WHERE ft.file_id = f.id AND c.name = ?
+				)`
+			args = append(args, f.Category)
+		} else {
+			// Build OR clause for aliases
+			placeholders := make([]string, len(f.Values))
+			for i := range f.Values {
+				placeholders[i] = "?"
+			}
+
+			where += fmt.Sprintf(`
+				AND EXISTS (
+					SELECT 1
+					FROM file_tags ft
+					JOIN tags t ON ft.tag_id = t.id
+					JOIN categories c ON c.id = t.category_id
+					WHERE ft.file_id = f.id AND c.name = ? AND t.value IN (%s)
+				)`, strings.Join(placeholders, ","))
+
+			args = append(args, f.Category)
+			for _, v := range f.Values {
+				args = append(args, v)
+			}
+		}
+	}
+
+	return where, args
+}
+
 func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 	page := pageFromRequest(r)
 	perPage := perPageFromConfig(50)
@@ -119,95 +160,25 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build count query (existing logic)
-	countQuery := `SELECT COUNT(DISTINCT f.id) FROM files f WHERE 1=1`
-	countArgs := []interface{}{}
-
-	for _, f := range filters {
-		if f.Value == "unassigned" {
-			countQuery += `
-				AND NOT EXISTS (
-					SELECT 1
-					FROM file_tags ft
-					JOIN tags t ON ft.tag_id = t.id
-					JOIN categories c ON c.id = t.category_id
-					WHERE ft.file_id = f.id AND c.name = ?
-				)`
-			countArgs = append(countArgs, f.Category)
-		} else {
-			// Build OR clause for aliases
-			placeholders := make([]string, len(f.Values))
-			for i := range f.Values {
-				placeholders[i] = "?"
-			}
-
-			countQuery += fmt.Sprintf(`
-				AND EXISTS (
-					SELECT 1
-					FROM file_tags ft
-					JOIN tags t ON ft.tag_id = t.id
-					JOIN categories c ON c.id = t.category_id
-					WHERE ft.file_id = f.id AND c.name = ? AND t.value IN (%s)
-				)`, strings.Join(placeholders, ","))
-
-			countArgs = append(countArgs, f.Category)
-			for _, v := range f.Values {
-				countArgs = append(countArgs, v)
-			}
-		}
-	}
+	// Build the shared WHERE clause once and reuse it for both queries.
+	where, whereArgs := buildTagFilterWhere(filters)
 
 	var total int
-	err := db.QueryRow(countQuery, countArgs...).Scan(&total)
+	countArgs := append([]interface{}(nil), whereArgs...) // copy; count query does not need pagination args
+	err := db.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f`+where, countArgs...).Scan(&total)
 	if err != nil {
 		log.Printf("Error: tagFilterHandler: failed to count files: %v", err)
 		renderError(w, "Failed to count files", http.StatusInternalServerError)
 		return
 	}
 
-	// Build main query with pagination (existing logic)
-	query := `SELECT f.id, f.filename, f.path, COALESCE(f.description, '') as description FROM files f WHERE 1=1`
-	args := []interface{}{}
-
-	for _, f := range filters {
-		if f.Value == "unassigned" {
-			query += `
-				AND NOT EXISTS (
-					SELECT 1
-					FROM file_tags ft
-					JOIN tags t ON ft.tag_id = t.id
-					JOIN categories c ON c.id = t.category_id
-					WHERE ft.file_id = f.id AND c.name = ?
-				)`
-			args = append(args, f.Category)
-		} else {
-			// Build OR clause for aliases
-			placeholders := make([]string, len(f.Values))
-			for i := range f.Values {
-				placeholders[i] = "?"
-			}
-
-			query += fmt.Sprintf(`
-				AND EXISTS (
-					SELECT 1
-					FROM file_tags ft
-					JOIN tags t ON ft.tag_id = t.id
-					JOIN categories c ON c.id = t.category_id
-					WHERE ft.file_id = f.id AND c.name = ? AND t.value IN (%s)
-				)`, strings.Join(placeholders, ","))
-
-			args = append(args, f.Category)
-			for _, v := range f.Values {
-				args = append(args, v)
-			}
-		}
-	}
-
 	offset := (page - 1) * perPage
-	query += ` ORDER BY f.id DESC LIMIT ? OFFSET ?`
-	args = append(args, perPage, offset)
-
-	files, err := queryFilesWithTags(query, args...)
+	dataArgs := append(append([]interface{}(nil), whereArgs...), perPage, offset)
+	files, err := queryFilesWithTags(
+		`SELECT f.id, f.filename, f.path, COALESCE(f.description, '') as description FROM files f`+
+			where+` ORDER BY f.id DESC LIMIT ? OFFSET ?`,
+		dataArgs...,
+	)
 	if err != nil {
 		log.Printf("Error: tagFilterHandler: failed to fetch files: %v", err)
 		renderError(w, "Failed to fetch files", http.StatusInternalServerError)
