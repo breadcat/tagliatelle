@@ -12,15 +12,6 @@ import (
 	"time"
 )
 
-type AdminPageData struct {
-	Config            Config
-	Error             string
-	Success           string
-	OrphanData        OrphanData
-	ActiveTab         string
-	MissingThumbnails []VideoFile
-}
-
 func renderAdminPage(w http.ResponseWriter, r *http.Request, data AdminPageData) {
 	if data.ActiveTab == "" {
 		data.ActiveTab = r.FormValue("active_tab")

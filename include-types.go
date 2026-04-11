@@ -124,3 +124,17 @@ type SedRule struct {
 	Description string `json:"description"`
 	Command     string `json:"command"`
 }
+
+type CBZImage struct {
+	Filename string
+	Index    int
+}
+
+type AdminPageData struct {
+	Config            Config
+	Error             string
+	Success           string
+	OrphanData        OrphanData
+	ActiveTab         string
+	MissingThumbnails []VideoFile
+}

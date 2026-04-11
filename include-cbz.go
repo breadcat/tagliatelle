@@ -185,12 +185,6 @@ func drawImage(dst *image.RGBA, src image.Image, x, y int) {
 	}
 }
 
-// CBZImage represents a single image within a CBZ file
-type CBZImage struct {
-	Filename string
-	Index    int
-}
-
 // getCBZImages returns a list of images in a CBZ file
 func getCBZImages(cbzPath string) ([]CBZImage, error) {
 	r, err := zip.OpenReader(cbzPath)
