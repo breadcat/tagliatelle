@@ -1,68 +1,5 @@
 {{template "_header" .}}
 
-        <div class="toolbar">
-            <div class="toolbar-group">
-                <input type="text" class="search-box" id="search-input" placeholder="Filter notes...">
-            </div>
-            <div class="toolbar-group">
-                <label>Filter by Category:</label>
-                <select id="category-filter" onchange="filterByCategory()">
-                    <option value="">All Categories</option>
-                    <option value="__uncategorized__">Uncategorized</option>
-                    {{range .Data.Categories}}
-                    <option value="{{.}}">{{.}}</option>
-                    {{end}}
-                </select>
-            </div>
-            <div class="toolbar-group">
-                <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
-                <button class="btn btn-secondary" onclick="previewProcessing()">Preview</button>
-            </div>
-            <div class="toolbar-actions">
-                <button class="btn btn-success" onclick="saveNotes()">Save</button>
-            </div>
-        </div>
-
-        <div id="message" class="message"></div>
-
-        <div class="editor-container">
-            <div class="editor-pane">
-                <div class="pane-header">Editor</div>
-                <textarea id="editor" placeholder="Enter your notes here...
-Format: category > value
-Example:
-websites > https://example.com
-tools > useful-tool
-ideas > interesting concept">{{.Data.Content}}</textarea>
-            </div>
-            <div class="editor-pane">
-                <div class="pane-header">Preview</div>
-                <div class="preview-content" id="preview">{{.Data.Content}}</div>
-            </div>
-        </div>
-
-
-<details><summary>Statistics</summary>
-        <div class="stats-bar">
-            <div class="stat">
-                <span class="stat-label">Total Lines:</span>
-                <span class="stat-value" id="total-lines">{{.Data.Stats.total_lines}}</span>
-            </div>
-            <div class="stat">
-                <span class="stat-label">Categorized:</span>
-                <span class="stat-value" id="categorized-lines">{{.Data.Stats.categorized_lines}}</span>
-            </div>
-            <div class="stat">
-                <span class="stat-label">Uncategorized:</span>
-                <span class="stat-value" id="uncategorized-lines">{{.Data.Stats.uncategorized}}</span>
-            </div>
-            <div class="stat">
-                <span class="stat-label">Categories:</span>
-                <span class="stat-value" id="unique-categories">{{.Data.Stats.unique_categories}}</span>
-            </div>
-        </div>
-</details>
-
 <details><summary>Sed Operations</summary>
         <div class="operations-panel">
             {{if .Data.SedRules}}
@@ -97,6 +34,64 @@ ideas > interesting concept">{{.Data.Content}}</textarea>
             </div>
 
 </details>
+
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <input type="text" class="search-box" id="search-input" placeholder="Filter notes...">
+            </div>
+            <div class="toolbar-group">
+                <label>Filter by Category:</label>
+                <select id="category-filter" onchange="filterByCategory()">
+                    <option value="">All Categories</option>
+                    <option value="__uncategorized__">Uncategorized</option>
+                    {{range .Data.Categories}}
+                    <option value="{{.}}">{{.}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div class="toolbar-group">
+                <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+                <button class="btn btn-secondary" onclick="previewProcessing()">Preview</button>
+            </div>
+            <div class="toolbar-actions">
+                <button class="btn btn-success" onclick="saveNotes()">Save</button>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-label">Total Lines:</span>
+                <span class="stat-value" id="total-lines">{{.Data.Stats.total_lines}}</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Categorized:</span>
+                <span class="stat-value" id="categorized-lines">{{.Data.Stats.categorized_lines}}</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Uncategorized:</span>
+                <span class="stat-value" id="uncategorized-lines">{{.Data.Stats.uncategorized}}</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Categories:</span>
+                <span class="stat-value" id="unique-categories">{{.Data.Stats.unique_categories}}</span>
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="editor-container">
+            <div class="editor-pane">
+                <textarea id="editor" placeholder="Enter your notes here...
+Format: category > value
+Example:
+websites > https://example.com
+tools > useful-tool
+ideas > interesting concept">{{.Data.Content}}</textarea>
+            </div>
+            <div class="editor-pane">
+                <div class="preview-content" id="preview">{{.Data.Content}}</div>
+            </div>
+        </div>
 
         </div>
 
