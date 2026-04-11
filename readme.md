@@ -16,6 +16,11 @@ go run . -d your_directory -p 8080
 
 Then access the server via a web browser, the default port is 8080.
 
+### Dependencies
+* `ffprobe` and `ffmpeg` for converting incompatible video uploads
+* `sed` for custom bulk note manipulation
+* `yt-dlp` for video downloader
+
 ## Features
 * Multiple tags per category
 * Bulk tag management via `file-id` or `tag:value` query
@@ -32,6 +37,7 @@ Then access the server via a web browser, the default port is 8080.
 * Self-organising, categorised notes, with optional `sed` operation rules
 * Orphan and reverse orphan finding
 * Database backup and vacuum support
+* `tag=!` and `tag=x,value=!` for duplicating previously applied tags
 
 ## Limitations
 * SQLite requires cgo, which requires gcc. Build/run with `CGO_ENABLED=1`
