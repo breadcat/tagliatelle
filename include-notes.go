@@ -158,9 +158,11 @@ func FilterByCategory(content, category string) string {
 	return strings.Join(filtered, "\n")
 }
 
-// GetCategories returns a sorted list of unique categories
-func GetCategories(content string) []string {
+func analyzeNotes(content string) notesAnalysis {
 	lines := strings.Split(content, "\n")
+
+	totalLines := 0
+	categorizedLines := 0
 	categoryMap := make(map[string]bool)
 
 	for _, line := range lines {
@@ -168,9 +170,10 @@ func GetCategories(content string) []string {
 		if trimmed == "" {
 			continue
 		}
-
+		totalLines++
 		note := ParseNote(trimmed)
 		if note.Category != "" {
+			categorizedLines++
 			categoryMap[note.Category] = true
 		}
 	}
@@ -179,52 +182,18 @@ func GetCategories(content string) []string {
 	for cat := range categoryMap {
 		categories = append(categories, cat)
 	}
-
 	sort.Strings(categories)
-	return categories
-}
 
-// GetNoteStats returns statistics about the notes
-func GetNoteStats(content string) map[string]int {
-	lines := strings.Split(content, "\n")
-
-	totalLines := 0
-	categorizedLines := 0
-	categories := make(map[string]bool)
-
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			continue
-		}
-
-		totalLines++
-		note := ParseNote(trimmed)
-
-		if note.Category != "" {
-			categorizedLines++
-			categories[note.Category] = true
-		}
+	return notesAnalysis{
+		Stats: map[string]int{
+			"total_lines":       totalLines,
+			"categorized_lines": categorizedLines,
+			"uncategorized":     totalLines - categorizedLines,
+			"unique_categories": len(categories),
+		},
+		Categories: categories,
+		LineCount:  totalLines,
 	}
-
-	return map[string]int{
-		"total_lines":       totalLines,
-		"categorized_lines": categorizedLines,
-		"uncategorized":     totalLines - categorizedLines,
-		"unique_categories": len(categories),
-	}
-}
-
-// CountLines returns the number of non-empty lines
-func CountLines(content string) int {
-	lines := strings.Split(content, "\n")
-	count := 0
-	for _, line := range lines {
-		if strings.TrimSpace(line) != "" {
-			count++
-		}
-	}
-	return count
 }
 
 // notesViewHandler displays the notes editor page
@@ -236,8 +205,7 @@ func notesViewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stats := GetNoteStats(content)
-	categories := GetCategories(content)
+	analysis := analyzeNotes(content)
 
 	notesData := struct {
 		Content    string
@@ -246,8 +214,8 @@ func notesViewHandler(w http.ResponseWriter, r *http.Request) {
 		SedRules   []SedRule
 	}{
 		Content:    content,
-		Stats:      stats,
-		Categories: categories,
+		Stats:      analysis.Stats,
+		Categories: analysis.Categories,
 		SedRules:   config.SedRules,
 	}
 
@@ -318,7 +286,7 @@ func notesStatsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stats := GetNoteStats(content)
+	stats := analyzeNotes(content).Stats
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(stats)
@@ -374,7 +342,7 @@ func notesApplySedHandler(w http.ResponseWriter, r *http.Request) {
 	response := map[string]interface{}{
 		"success": true,
 		"content": result,
-		"stats":   GetNoteStats(result),
+		"stats":   analyzeNotes(result).Stats,
 	}
 	log.Printf("Info: notesApplySedHandler: sed rule success, returning %d bytes", len(result))
 	json.NewEncoder(w).Encode(response)
@@ -391,13 +359,14 @@ func notesPreviewHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Process (deduplicate and sort)
 	processed := ProcessNotes(content)
+	analysis := analyzeNotes(processed)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":   true,
 		"content":   processed,
-		"stats":     GetNoteStats(processed),
-		"lineCount": CountLines(processed),
+		"stats":     analysis.Stats,
+		"lineCount": analysis.LineCount,
 	})
 }
 

@@ -138,3 +138,9 @@ type AdminPageData struct {
 	ActiveTab         string
 	MissingThumbnails []VideoFile
 }
+
+type notesAnalysis struct {
+	Stats      map[string]int
+	Categories []string
+	LineCount  int
+}
