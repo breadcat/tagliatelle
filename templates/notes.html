@@ -1,23 +1,5 @@
 {{template "_header" .}}
 
-<details><summary>Sed Operations</summary>
-        <div class="operations-panel">
-            {{if .Data.SedRules}}
-            <div class="operations-grid">
-                {{range $index, $rule := .Data.SedRules}}
-                <button class="operation-btn" onclick="applySedRule({{$index}})">
-                    <div class="operation-name">{{$rule.Name}}</div>
-                    <div class="operation-desc">{{$rule.Description}}</div>
-                </button>
-                {{end}}
-            </div>
-            {{else}}
-            <div style="padding: 15px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 4px; color: #666;">
-                No sed rules configured. Add sed rules in the <a href="/admin" style="color: #007bff;">Admin → Sed Rules</a> section.
-            </div>
-            {{end}}
-</details>
-
 <details><summary>Import and Export</summary>
 
             <div class="import-form">
@@ -52,6 +34,31 @@
             <div class="toolbar-group">
                 <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
                 <button class="btn btn-secondary" onclick="previewProcessing()">Preview</button>
+
+
+
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle">
+            Sed Rules ▼
+        </button>
+
+        <div class="dropdown-menu">
+            {{if .Data.SedRules}}
+                {{range $index, $rule := .Data.SedRules}}
+                <button class="dropdown-item" onclick="applySedRule({{$index}})">
+                    <div class="operation-name">{{$rule.Name}}</div>
+                    <div class="operation-desc">{{$rule.Description}}</div>
+                </button>
+                {{end}}
+            {{else}}
+                <div class="dropdown-empty">
+                    No sed rules configured.<br>
+                    <a href="/admin">Admin → Sed Rules</a>
+                </div>
+            {{end}}
+        </div>
+    </div>
+
             </div>
             <div class="toolbar-actions">
                 <button class="btn btn-success" onclick="saveNotes()">Save</button>
