@@ -1,4 +1,4 @@
-module tagger
+module tagliatelle
 
 go 1.25.1
 
