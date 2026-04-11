@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 )
 
@@ -50,18 +49,25 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	f.Tags = make(map[string][]string)
-	rows, _ := db.Query(`
+	rows, err := db.Query(`
 		SELECT c.name, t.value
 		FROM tags t
 		JOIN categories c ON c.id = t.category_id
 		JOIN file_tags ft ON ft.tag_id = t.id
 		WHERE ft.file_id=?`, f.ID)
-	for rows.Next() {
-		var cat, val string
-		rows.Scan(&cat, &val)
-		f.Tags[cat] = append(f.Tags[cat], val)
+	if err != nil {
+		log.Printf("Warning: fileHandler: failed to query tags for file id=%d: %v", f.ID, err)
+	} else {
+		for rows.Next() {
+			var cat, val string
+			if err := rows.Scan(&cat, &val); err != nil {
+				log.Printf("Warning: fileHandler: failed to scan tag row for file id=%d: %v", f.ID, err)
+				continue
+			}
+			f.Tags[cat] = append(f.Tags[cat], val)
+		}
+		rows.Close()
 	}
-	rows.Close()
 
 	if r.Method == http.MethodPost {
 		if r.FormValue("action") == "update_description" {
@@ -80,30 +86,35 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		cat := strings.TrimSpace(r.FormValue("category"))
 		val := strings.TrimSpace(r.FormValue("value"))
-		if cat != "" && val != "" {
-			originalVal := val
-			if val == "!" {
-				previousVal, err := getPreviousTagValue(cat, f.ID)
-				if err != nil {
-					http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("No previous tag found for category: "+cat), http.StatusSeeOther)
-					return
-				}
-				val = previousVal
-			}
-			_, tagID, err := getOrCreateCategoryAndTag(cat, val)
+
+		if cat == "" || val == "" {
+			http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Category and value must not be empty"), http.StatusSeeOther)
+			return
+		}
+
+		originalVal := val
+		if val == "!" {
+			previousVal, err := getPreviousTagValue(cat, f.ID)
 			if err != nil {
-				http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Failed to create tag: "+err.Error()), http.StatusSeeOther)
+				http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("No previous tag found for category: "+cat), http.StatusSeeOther)
 				return
 			}
-			_, err = db.Exec("INSERT OR IGNORE INTO file_tags(file_id, tag_id) VALUES (?, ?)", f.ID, tagID)
-			if err != nil {
-				http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Failed to add tag: "+err.Error()), http.StatusSeeOther)
-				return
-			}
-			if originalVal == "!" {
-				http.Redirect(w, r, "/file/"+idStr+"?success="+url.QueryEscape("Tag '"+cat+": "+val+"' copied from previous file"), http.StatusSeeOther)
-				return
-			}
+			val = previousVal
+		}
+		_, tagID, err := getOrCreateCategoryAndTag(cat, val)
+		if err != nil {
+			log.Printf("Error: fileHandler: failed to create tag %s:%s for file id=%d: %v", cat, val, f.ID, err)
+			http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Failed to create tag: "+err.Error()), http.StatusSeeOther)
+			return
+		}
+		if _, err = db.Exec("INSERT OR IGNORE INTO file_tags(file_id, tag_id) VALUES (?, ?)", f.ID, tagID); err != nil {
+			log.Printf("Error: fileHandler: failed to add tag %s:%s to file id=%d: %v", cat, val, f.ID, err)
+			http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Failed to add tag: "+err.Error()), http.StatusSeeOther)
+			return
+		}
+		if originalVal == "!" {
+			http.Redirect(w, r, "/file/"+idStr+"?success="+url.QueryEscape("Tag '"+cat+": "+val+"' copied from previous file"), http.StatusSeeOther)
+			return
 		}
 		http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 		return
@@ -120,12 +131,17 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Warning: fileHandler: failed to query categories for file id=%d: %v", f.ID, err)
 	}
 	var cats []string
-	for catRows.Next() {
-		var c string
-		catRows.Scan(&c)
-		cats = append(cats, c)
+	if catRows != nil {
+		for catRows.Next() {
+			var c string
+			if err := catRows.Scan(&c); err != nil {
+				log.Printf("Warning: fileHandler: failed to scan category row: %v", err)
+				continue
+			}
+			cats = append(cats, c)
+		}
+		catRows.Close()
 	}
-	catRows.Close()
 
 	propRows, err := db.Query(`
 		SELECT key, value FROM file_properties
@@ -136,12 +152,17 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Warning: fileHandler: failed to query properties for file id=%d: %v", f.ID, err)
 	}
 	fileProps := make(map[string]string)
-	for propRows.Next() {
-		var k, v string
-		propRows.Scan(&k, &v)
-		fileProps[k] = v
+	if propRows != nil {
+		for propRows.Next() {
+			var k, v string
+			if err := propRows.Scan(&k, &v); err != nil {
+				log.Printf("Warning: fileHandler: failed to scan property row for file id=%d: %v", f.ID, err)
+				continue
+			}
+			fileProps[k] = v
+		}
+		propRows.Close()
 	}
-	propRows.Close()
 
 	pageData := buildPageDataWithIP(f.Filename, struct {
 		File            File
@@ -192,13 +213,17 @@ func tagActionHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 
 	if cat != "" && val != "" {
 		var tagID int
-		db.QueryRow(`
+		if err := db.QueryRow(`
 			SELECT t.id
 			FROM tags t
 			JOIN categories c ON c.id=t.category_id
-			WHERE c.name=? AND t.value=?`, cat, val).Scan(&tagID)
+			WHERE c.name=? AND t.value=?`, cat, val).Scan(&tagID); err != nil && err != sql.ErrNoRows {
+			log.Printf("Warning: tagActionHandler: failed to look up tag %s:%s for file id=%s: %v", cat, val, fileID, err)
+		}
 		if tagID != 0 {
-			db.Exec("DELETE FROM file_tags WHERE file_id=? AND tag_id=?", fileID, tagID)
+			if _, err := db.Exec("DELETE FROM file_tags WHERE file_id=? AND tag_id=?", fileID, tagID); err != nil {
+				log.Printf("Error: tagActionHandler: failed to delete file_tag for file id=%s tag id=%d: %v", fileID, tagID, err)
+			}
 		}
 	}
 	http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
@@ -239,25 +264,17 @@ func getOrCreateCategoryAndTag(category, value string) (int, int, error) {
 }
 
 func listFilesHandler(w http.ResponseWriter, r *http.Request) {
-	// Get page number from query params
-	pageStr := r.URL.Query().Get("page")
-	page := 1
-	if pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
+	page := pageFromRequest(r)
+	perPage := perPageFromConfig(50)
 
-	// Get per page from config
-	perPage := 50
-	if config.ItemsPerPage != "" {
-		if pp, err := strconv.Atoi(config.ItemsPerPage); err == nil && pp > 0 {
-			perPage = pp
-		}
+	tagged, taggedTotal, err := getTaggedFilesPaginated(page, perPage)
+	if err != nil {
+		log.Printf("Warning: listFilesHandler: failed to get tagged files: %v", err)
 	}
-
-	tagged, taggedTotal, _ := getTaggedFilesPaginated(page, perPage)
-	untagged, untaggedTotal, _ := getUntaggedFilesPaginated(page, perPage)
+	untagged, untaggedTotal, err := getUntaggedFilesPaginated(page, perPage)
+	if err != nil {
+		log.Printf("Warning: listFilesHandler: failed to get untagged files: %v", err)
+	}
 
 	// Use the larger total for pagination
 	total := taggedTotal
