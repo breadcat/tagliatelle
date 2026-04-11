@@ -79,8 +79,9 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		return
 	}
 
-	if err = os.Remove(filepath.Join(config.UploadDir, currentFile.Path)); err != nil {
-		log.Printf("Warning: Failed to delete physical file %s: %v", currentFile.Path, err)
+	absPath := filepath.Join(config.UploadDir, currentFile.Path)
+	if err = os.Remove(absPath); err != nil {
+		log.Printf("Warning: fileDeleteHandler: failed to delete physical file %s: %v", absPath, err)
 	}
 
 	// Delete thumbnail if it exists
@@ -108,8 +109,8 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		return
 	}
 
-	var currentFilename, currentPath string
-	err := db.QueryRow("SELECT filename, path FROM files WHERE id=?", fileID).Scan(&currentFilename, &currentPath)
+	var currentFilename, currentRelPath string
+	err := db.QueryRow("SELECT filename, path FROM files WHERE id=?", fileID).Scan(&currentFilename, &currentRelPath)
 	if err != nil {
 		log.Printf("Error: fileRenameHandler: file not found for id=%s: %v", fileID, err)
 		renderError(w, "File not found", http.StatusNotFound)
@@ -121,13 +122,15 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		return
 	}
 
+	currentAbsPath := filepath.Join(config.UploadDir, currentRelPath)
 	newPath := filepath.Join(config.UploadDir, newFilename)
 	if _, err := os.Stat(newPath); !os.IsNotExist(err) {
 		renderError(w, "A file with that name already exists", http.StatusConflict)
 		return
 	}
 
-	if err := os.Rename(currentPath, newPath); err != nil {
+	if err := os.Rename(currentAbsPath, newPath); err != nil {
+		log.Printf("Error: fileRenameHandler: failed to rename %s -> %s: %v", currentAbsPath, newPath, err)
 		renderError(w, "Failed to rename physical file: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -137,26 +140,44 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 
 	if _, err := os.Stat(thumbOld); err == nil {
 		if err := os.Rename(thumbOld, thumbNew); err != nil {
-			os.Rename(newPath, currentPath)
+			log.Printf("Error: fileRenameHandler: failed to rename thumbnail %s -> %s: %v", thumbOld, thumbNew, err)
+			if renameErr := os.Rename(newPath, currentAbsPath); renameErr != nil {
+				log.Printf("Error: fileRenameHandler: failed to roll back file rename %s -> %s: %v", newPath, currentAbsPath, renameErr)
+			}
 			renderError(w, "Failed to rename thumbnail: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 
-	_, err = db.Exec("UPDATE files SET filename=?, path=? WHERE id=?", newFilename, newPath, fileID)
+	newRelPath, err := filepath.Rel(config.UploadDir, newPath)
 	if err != nil {
-		os.Rename(newPath, currentPath)
-		if _, err := os.Stat(thumbNew); err == nil {
-			os.Rename(thumbNew, thumbOld)
+		log.Printf("Error: fileRenameHandler: failed to compute relative path for %s: %v", newPath, err)
+		newRelPath = newFilename
+	}
+
+	_, err = db.Exec("UPDATE files SET filename=?, path=? WHERE id=?", newFilename, newRelPath, fileID)
+	if err != nil {
+		log.Printf("Error: fileRenameHandler: failed to update database for file id=%s: %v", fileID, err)
+		if renameErr := os.Rename(newPath, currentAbsPath); renameErr != nil {
+			log.Printf("Error: fileRenameHandler: failed to roll back file rename %s -> %s: %v", newPath, currentAbsPath, renameErr)
+		}
+		if _, statErr := os.Stat(thumbNew); statErr == nil {
+			if renameErr := os.Rename(thumbNew, thumbOld); renameErr != nil {
+				log.Printf("Error: fileRenameHandler: failed to roll back thumbnail rename %s -> %s: %v", thumbNew, thumbOld, renameErr)
+			}
 		}
 		renderError(w, "Failed to update database", http.StatusInternalServerError)
 		return
 	}
 
 	// Recompute properties in case the extension changed
-	db.Exec("DELETE FROM file_properties WHERE file_id = ?", fileID)
+	if _, err := db.Exec("DELETE FROM file_properties WHERE file_id = ?", fileID); err != nil {
+		log.Printf("Warning: fileRenameHandler: failed to delete old properties for file id=%s: %v", fileID, err)
+	}
 	if id, err := strconv.ParseInt(fileID, 10, 64); err == nil {
 		computeProperties(id, newPath)
+	} else {
+		log.Printf("Warning: fileRenameHandler: failed to parse file id %s for property recompute: %v", fileID, err)
 	}
 
 	http.Redirect(w, r, "/file/"+fileID, http.StatusSeeOther)
