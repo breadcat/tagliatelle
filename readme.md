@@ -38,6 +38,7 @@ Then access the server via a web browser, the default port is 8080.
 * Orphan and reverse orphan finding
 * Database backup and vacuum support
 * `tag=!` and `tag=x,value=!` for duplicating previously applied tags
+* Chainable `/and/tag/tag2/value2` filter matching
 
 ## Limitations
 * SQLite requires cgo, which requires gcc. Build/run with `CGO_ENABLED=1`
