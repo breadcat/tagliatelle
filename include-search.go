@@ -7,7 +7,7 @@ import (
 )
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
-	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	query := strings.TrimSpace(strings.TrimPrefix(r.URL.Path, "/search/"))
 	page := pageFromRequest(r)
 	perPage := perPageFromConfig(50)
 

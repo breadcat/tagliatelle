@@ -44,7 +44,9 @@
 </ul>
 
 <div id="search-container">
-	<form method="get" action="/search"><input type="text" name="q" value="{{.Query}}" placeholder="Search..."></form>
+  <form onsubmit="event.preventDefault(); window.location.href='/search/' + encodeURIComponent(this.q.value);">
+    <input type="text" name="q" value="{{.Query}}" placeholder="Search...">
+  </form>
 </div>
 </nav>
 
