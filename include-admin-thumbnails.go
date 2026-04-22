@@ -165,6 +165,10 @@ func generateThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if !filepath.IsAbs(path) {
+			path = filepath.Join(config.UploadDir, path)
+		}
+
 		if err = generateThumbnailAtTime(path, config.UploadDir, filename, timestamp); err != nil {
 			log.Printf("Error: generateThumbnailHandler: failed to generate thumbnail for file id=%s at %s: %v", fileID, timestamp, err)
 			http.Redirect(w, r, redirectBase+"?error="+url.QueryEscape("Failed to generate thumbnail: "+err.Error()), http.StatusSeeOther)
