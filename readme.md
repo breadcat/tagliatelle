@@ -37,7 +37,7 @@ Then access the server via a web browser, the default port is 8080.
 * Self-organising, categorised notes, with optional `sed` operation rules
 * Orphan and reverse orphan finding
 * Database backup and vacuum support
-* `tag=!` and `tag=x,value=!` for duplicating previously applied tags
+* `tag=!`, `tag=!123` and `tag=x,value=!` for duplicating previously applied tags
 * Chainable `/and/tag/tag2/value2` filter matching
 
 ## Limitations
