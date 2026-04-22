@@ -1,6 +1,7 @@
 package main
 
 import (
+    "bytes"
     "fmt"
     "log"
     "net/http"
@@ -19,12 +20,12 @@ func generateThumbnailAtTime(videoPath, uploadDir, filename, timestamp string) e
 
 	thumbPath := filepath.Join(thumbDir, filename+".jpg")
 
+	var stderr bytes.Buffer
 	cmd := exec.Command("ffmpeg", "-y", "-ss", timestamp, "-i", videoPath, "-vframes", "1", "-vf", "scale=400:-1", thumbPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to generate thumbnail at %s: %v", timestamp, err)
+		return fmt.Errorf("failed to generate thumbnail at %s: %v\nffmpeg output: %s", timestamp, err, stderr.String())
 	}
 
 	return nil
