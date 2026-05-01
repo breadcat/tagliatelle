@@ -71,6 +71,14 @@ func getPreviewFiles(filters []filter) ([]File, error) {
 						WHERE ft.file_id = f.id AND c.name = ? AND t.value = ?
 					)`
 				args = append(args, filter.Category, tagValue)
+			} else if filter.IsProperty {
+				query += `
+					AND EXISTS (
+						SELECT 1
+						FROM file_properties fp
+						WHERE fp.file_id = f.id AND fp.key = ? AND fp.value = ?
+					)`
+				args = append(args, filter.Category, filter.Value)
 			} else if filter.Value == "unassigned" {
 				query += `
 					AND NOT EXISTS (

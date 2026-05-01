@@ -86,6 +86,7 @@ type filter struct {
 	Value      string
 	Values     []string // Expanded values including aliases
 	IsPreviews bool     // New field to indicate preview mode
+	IsProperty bool
 }
 
 type BulkTagFormData struct {

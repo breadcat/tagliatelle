@@ -179,6 +179,54 @@ func getPropertyNav() (map[string][]PropertyDisplay, error) {
 
 func propertyFilterHandler(w http.ResponseWriter, r *http.Request) {
 	trimmed := strings.TrimPrefix(r.URL.Path, "/property/")
+
+	// If path contains /and/ delegate to the shared multi-filter
+	if strings.Contains(trimmed, "/and/") {
+		page := pageFromRequest(r)
+		perPage := perPageFromConfig(50)
+
+		filters, breadcrumbs, err := parseFilterSegments(trimmed, "property")
+		if err != nil {
+			renderError(w, "Invalid filter path", http.StatusBadRequest)
+			return
+		}
+
+		where, whereArgs := buildTagFilterWhere(filters)
+
+		var total int
+		countArgs := append([]interface{}(nil), whereArgs...)
+		err = db.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f`+where, countArgs...).Scan(&total)
+		if err != nil {
+			log.Printf("Error: propertyFilterHandler: failed to count files: %v", err)
+			renderError(w, "Failed to count files", http.StatusInternalServerError)
+			return
+		}
+
+		offset := (page - 1) * perPage
+		dataArgs := append(append([]interface{}(nil), whereArgs...), perPage, offset)
+		files, err := queryFilesWithTags(
+			`SELECT f.id, f.filename, f.path, COALESCE(f.description, '') as description FROM files f`+
+				where+` ORDER BY f.id DESC LIMIT ? OFFSET ?`,
+			dataArgs...,
+		)
+		if err != nil {
+			log.Printf("Error: propertyFilterHandler: failed to fetch files: %v", err)
+			renderError(w, "Failed to fetch files", http.StatusInternalServerError)
+			return
+		}
+
+		title := buildFilterTitle(filters, ", ")
+		pageData := buildPageDataWithPagination(title, ListData{
+			Tagged:      files,
+			Untagged:    nil,
+			Breadcrumbs: []Breadcrumb{},
+		}, page, total, perPage, r)
+		pageData.Breadcrumbs = breadcrumbs
+
+		renderTemplate(w, "list.html", pageData)
+		return
+	}
+
 	parts := strings.SplitN(trimmed, "/", 2)
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
 		renderError(w, "Invalid property filter path", http.StatusBadRequest)

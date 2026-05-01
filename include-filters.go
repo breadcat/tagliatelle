@@ -25,7 +25,15 @@ func buildTagFilterWhere(filters []filter) (string, []interface{}) {
 	var args []interface{}
 
 	for _, f := range filters {
-		if f.Value == "unassigned" {
+		if f.IsProperty {
+			where += `
+				AND EXISTS (
+					SELECT 1
+					FROM file_properties fp
+					WHERE fp.file_id = f.id AND fp.key = ? AND fp.value = ?
+				)`
+			args = append(args, f.Category, f.Value)
+		} else if f.Value == "unassigned" {
 			where += `
 				AND NOT EXISTS (
 					SELECT 1
@@ -61,12 +69,9 @@ func buildTagFilterWhere(filters []filter) (string, []interface{}) {
 	return where, args
 }
 
-func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
-	page := pageFromRequest(r)
-	perPage := perPageFromConfig(50)
-
-	fullPath := strings.TrimPrefix(r.URL.Path, "/tag/")
-	tagPairs := strings.Split(fullPath, "/and/tag/")
+// parseFilterSegments splits filter path into individual filter structs
+func parseFilterSegments(fullPath, firstKind string) ([]filter, []Breadcrumb, error) {
+	rawSegments := strings.Split(fullPath, "/and/")
 
 	breadcrumbs := []Breadcrumb{
 		{Name: "home", URL: "/"},
@@ -74,58 +79,91 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var filters []filter
-	currentPath := "/tag"
+	currentPath := "/" + firstKind
 
-	for i, pair := range tagPairs {
-		parts := strings.Split(pair, "/")
-		if len(parts) != 2 {
-			renderError(w, "Invalid tag filter path", http.StatusBadRequest)
-			return
+	for i, seg := range rawSegments {
+		var kind, category, value string
+
+		if i == 0 {
+			// First segment has no explicit kind prefix — the caller supplies it.
+			parts := strings.SplitN(seg, "/", 2)
+			if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+				return nil, nil, fmt.Errorf("invalid %s segment: %q", firstKind, seg)
+			}
+			kind, category, value = firstKind, parts[0], parts[1]
+		} else {
+			// Subsequent segments are "kind/category/value".
+			parts := strings.SplitN(seg, "/", 3)
+			if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+				return nil, nil, fmt.Errorf("invalid filter segment: %q", seg)
+			}
+			kind, category, value = parts[0], parts[1], parts[2]
+			if kind != "tag" && kind != "property" {
+				return nil, nil, fmt.Errorf("unknown filter kind %q in segment: %q", kind, seg)
+			}
 		}
 
 		f := filter{
-			Category:   parts[0],
-			Value:      parts[1],
-			IsPreviews: parts[1] == "previews",
+			Category:   category,
+			Value:      value,
+			IsProperty: kind == "property",
+			IsPreviews: kind == "tag" && value == "previews",
 		}
 
-		// Expand with aliases (unless it's a special tag)
-		if parts[1] != "unassigned" && parts[1] != "previews" {
-			f.Values = expandTagWithAliases(parts[0], parts[1])
+		if kind == "tag" && value != "unassigned" && value != "previews" {
+			f.Values = expandTagWithAliases(category, value)
 		}
 
 		filters = append(filters, f)
 
-		// Build breadcrumb path incrementally
+		// Build the cumulative breadcrumb URL for this filter step.
 		if i == 0 {
-			currentPath += "/" + parts[0] + "/" + parts[1]
+			currentPath += "/" + category + "/" + value
 		} else {
-			currentPath += "/and/tag/" + parts[0] + "/" + parts[1]
+			currentPath += "/and/" + kind + "/" + category + "/" + value
 		}
 
-		// Add category breadcrumb (only if it's the first occurrence)
+		// Add a category/key breadcrumb (deduplicated).
 		categoryExists := false
 		for _, bc := range breadcrumbs {
-			if bc.Name == parts[0] {
+			if bc.Name == category {
 				categoryExists = true
 				break
 			}
 		}
 		if !categoryExists {
+			anchorURL := "/tags#tag-" + category
+			if kind == "property" {
+				anchorURL = "/properties#prop-" + category
+			}
 			breadcrumbs = append(breadcrumbs, Breadcrumb{
-				Name: parts[0],
-				URL:  "/tags#tag-" + parts[0],
+				Name: category,
+				URL:  anchorURL,
 			})
 		}
 
-		// Add value breadcrumb
 		breadcrumbs = append(breadcrumbs, Breadcrumb{
-			Name: parts[1],
+			Name: value,
 			URL:  currentPath,
 		})
 	}
 
-	// Check if we're in preview mode for any filter
+	return filters, breadcrumbs, nil
+}
+
+func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
+	page := pageFromRequest(r)
+	perPage := perPageFromConfig(50)
+
+	fullPath := strings.TrimPrefix(r.URL.Path, "/tag/")
+
+	filters, breadcrumbs, err := parseFilterSegments(fullPath, "tag")
+	if err != nil {
+		renderError(w, "Invalid filter path", http.StatusBadRequest)
+		return
+	}
+
+	// Check if we're in preview mode for any filter.
 	hasPreviewFilter := false
 	for _, f := range filters {
 		if f.IsPreviews {
@@ -135,7 +173,6 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasPreviewFilter {
-		// Handle preview mode
 		files, err := getPreviewFiles(filters)
 		if err != nil {
 			log.Printf("Error: tagFilterHandler: failed to fetch preview files: %v", err)
@@ -143,12 +180,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var titleParts []string
-		for _, f := range filters {
-			titleParts = append(titleParts, fmt.Sprintf("%s: %s", f.Category, f.Value))
-		}
-		title := "Tagged: " + strings.Join(titleParts, " + ")
-
+		title := "Tagged: " + buildFilterTitle(filters, " + ")
 		pageData := buildPageDataWithPagination(title, ListData{
 			Tagged:      files,
 			Untagged:    nil,
@@ -165,7 +197,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 
 	var total int
 	countArgs := append([]interface{}(nil), whereArgs...) // copy; count query does not need pagination args
-	err := db.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f`+where, countArgs...).Scan(&total)
+	err = db.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f`+where, countArgs...).Scan(&total)
 	if err != nil {
 		log.Printf("Error: tagFilterHandler: failed to count files: %v", err)
 		renderError(w, "Failed to count files", http.StatusInternalServerError)
@@ -185,12 +217,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var titleParts []string
-	for _, f := range filters {
-		titleParts = append(titleParts, fmt.Sprintf("%s: %s", f.Category, f.Value))
-	}
-	title := "Tagged: " + strings.Join(titleParts, ", ")
-
+	title := "Tagged: " + buildFilterTitle(filters, ", ")
 	pageData := buildPageDataWithPagination(title, ListData{
 		Tagged:      files,
 		Untagged:    nil,
@@ -199,6 +226,14 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 	pageData.Breadcrumbs = breadcrumbs
 
 	renderTemplate(w, "list.html", pageData)
+}
+
+func buildFilterTitle(filters []filter, sep string) string {
+	var parts []string
+	for _, f := range filters {
+		parts = append(parts, fmt.Sprintf("%s: %s", f.Category, f.Value))
+	}
+	return strings.Join(parts, sep)
 }
 
 func expandTagWithAliases(category, value string) []string {
