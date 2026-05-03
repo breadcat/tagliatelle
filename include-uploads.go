@@ -272,6 +272,11 @@ func processVideoFile(tempPath, finalPath string) (string, string, error) {
 			return "", "", fmt.Errorf("failed to re-encode HEVC video: %v", err)
 		}
 		os.Remove(tempPath)
+
+		if err := generateThumbnail(finalPath, config.UploadDir, filepath.Base(finalPath)); err != nil {
+			log.Printf("Warning: could not generate thumbnail after HEVC re-encode: %v", err)
+		}
+
 		return finalPath, warningMsg, nil
 	}
 	if err := os.Rename(tempPath, finalPath); err != nil {
