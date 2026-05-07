@@ -1,111 +1,127 @@
-// Initialize from the global variable passed from the template
 let aliasGroups = window.initialAliasGroups || [];
 
 function renderAliasGroups() {
     const container = document.getElementById('alias-groups');
     container.innerHTML = '';
 
-    aliasGroups.forEach((group, groupIndex) => {
-        const groupDiv = document.createElement('div');
-        groupDiv.style.cssText = 'border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px;';
+    aliasGroups.forEach((group, gi) => {
+        if (!group.aliases) group.aliases = [];
 
-        groupDiv.innerHTML = `
-            <div style="margin-bottom: 10px;">
-                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Category:</label>
-                <input type="text"
-                       value="${escapeHtml(group.category)}"
-                       onchange="updateCategory(${groupIndex}, this.value)"
-                       style="width: 200px; padding: 6px; font-size: 14px;"
-                       placeholder="e.g., colour">
-            </div>
+        const row = document.createElement('div');
+        row.className = 'alias-row';
+        row.dataset.group = gi;
 
-            <div style="margin-bottom: 10px;">
-                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Aliased Values:</label>
-                <div id="aliases-${groupIndex}"></div>
-                <button onclick="addAlias(${groupIndex})" type="button" class="text-button">+ Add Value</button>
-            </div>
+        // Category input
+        const catInput = document.createElement('input');
+        catInput.type = 'text';
+        catInput.className = 'alias-input alias-input--category';
+        catInput.value = group.category;
+        catInput.placeholder = 'category';
+        catInput.addEventListener('change', e => { aliasGroups[gi].category = e.target.value; });
+        row.appendChild(catInput);
 
-            <button onclick="removeAliasGroup(${groupIndex})" type="button" class="text-button">Remove Group</button>
-        `;
+        // Arrow separator
+        const arrow = document.createElement('span');
+        arrow.className = 'alias-separator';
+        arrow.textContent = '→';
+        row.appendChild(arrow);
 
-        container.appendChild(groupDiv);
-        renderAliases(groupIndex);
+        // Alias value inputs
+        const valuesWrapper = document.createElement('span');
+        valuesWrapper.id = `aliases-${gi}`;
+        valuesWrapper.style.cssText = 'display:inline-flex; gap:4px; flex-wrap:wrap; align-items:center;';
+        row.appendChild(valuesWrapper);
+        renderAliasValues(gi, valuesWrapper);
+
+        // + Value button
+        const addBtn = document.createElement('button');
+        addBtn.type = 'button';
+        addBtn.className = 'alias-btn';
+        addBtn.textContent = '+ Value';
+        addBtn.addEventListener('click', () => addAlias(gi));
+        row.appendChild(addBtn);
+
+        // Remove group button
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'alias-btn alias-btn--remove';
+        removeBtn.textContent = '✕ Group';
+        removeBtn.addEventListener('click', () => removeAliasGroup(gi));
+        row.appendChild(removeBtn);
+
+        container.appendChild(row);
     });
 }
 
-function renderAliases(groupIndex) {
-    const container = document.getElementById(`aliases-${groupIndex}`);
-    container.innerHTML = '';
+function renderAliasValues(gi, wrapper) {
+    if (!wrapper) wrapper = document.getElementById(`aliases-${gi}`);
+    wrapper.innerHTML = '';
 
-    const group = aliasGroups[groupIndex];
-    if (!group.aliases) {
-        group.aliases = [];
-    }
+    aliasGroups[gi].aliases.forEach((alias, ai) => {
+        if (ai > 0) {
+            const comma = document.createElement('span');
+            comma.className = 'alias-separator';
+            comma.textContent = ',';
+            wrapper.appendChild(comma);
+        }
 
-    group.aliases.forEach((alias, aliasIndex) => {
-        const aliasDiv = document.createElement('div');
-        aliasDiv.style.cssText = 'display: flex; gap: 10px; margin-bottom: 5px; align-items: center;';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'alias-input alias-input--value';
+        input.value = alias;
+        input.placeholder = 'value';
+        input.addEventListener('change', e => updateAlias(gi, ai, e.target.value));
 
-        aliasDiv.innerHTML = `
-            <input type="text"
-                   value="${escapeHtml(alias)}"
-                   onchange="updateAlias(${groupIndex}, ${aliasIndex}, this.value)"
-                   style="flex: 1; padding: 6px; font-size: 14px;"
-                   placeholder="e.g., blue">
-            <button onclick="removeAlias(${groupIndex}, ${aliasIndex})" type="button" class="text-button">Remove</button>
-        `;
+        // Double-click to remove a single value
+        input.title = 'Double-click to remove';
+        input.addEventListener('dblclick', () => removeAlias(gi, ai));
 
-        container.appendChild(aliasDiv);
+        wrapper.appendChild(input);
     });
 }
 
 function addAliasGroup() {
-    aliasGroups.push({
-        category: '',
-        aliases: ['', '']
-    });
+    aliasGroups.push({ category: '', aliases: ['', ''] });
     renderAliasGroups();
 }
 
-function removeAliasGroup(groupIndex) {
+function removeAliasGroup(gi) {
     if (confirm('Remove this alias group?')) {
-        aliasGroups.splice(groupIndex, 1);
+        aliasGroups.splice(gi, 1);
         renderAliasGroups();
     }
 }
 
-function updateCategory(groupIndex, value) {
-    aliasGroups[groupIndex].category = value;
+function updateCategory(gi, value) {
+    aliasGroups[gi].category = value;
 }
 
-function addAlias(groupIndex) {
-    aliasGroups[groupIndex].aliases.push('');
-    renderAliases(groupIndex);
+function addAlias(gi) {
+    aliasGroups[gi].aliases.push('');
+    renderAliasValues(gi);
 }
 
-function removeAlias(groupIndex, aliasIndex) {
-    aliasGroups[groupIndex].aliases.splice(aliasIndex, 1);
-    renderAliases(groupIndex);
+function removeAlias(gi, ai) {
+    aliasGroups[gi].aliases.splice(ai, 1);
+    renderAliasValues(gi);
 }
 
-function updateAlias(groupIndex, aliasIndex, value) {
-    aliasGroups[groupIndex].aliases[aliasIndex] = value;
+function updateAlias(gi, ai, value) {
+    aliasGroups[gi].aliases[ai] = value;
 }
 
-document.getElementById('aliases-form').addEventListener('submit', function(e) {
-    // Filter out incomplete groups (need a category and at least 2 aliases)
+// submit form
+document.getElementById('aliases-form').addEventListener('submit', function () {
     const cleanedGroups = aliasGroups
-        .filter(group => group.category && group.aliases && group.aliases.length > 0)
-        .map(group => ({
-            category: group.category.trim(),
-            aliases: group.aliases.filter(a => a && a.trim()).map(a => a.trim())
+        .filter(g => g.category && g.aliases && g.aliases.length > 0)
+        .map(g => ({
+            category: g.category.trim(),
+            aliases: g.aliases.filter(a => a && a.trim()).map(a => a.trim())
         }))
-        .filter(group => group.aliases.length >= 2);
+        .filter(g => g.aliases.length >= 2);
 
-    // Remove any previously-injected hidden fields from a prior submit
     this.querySelectorAll('input[data-generated]').forEach(el => el.remove());
 
-    // Append one hidden field per value — no JSON
     cleanedGroups.forEach((group, gi) => {
         appendHidden(this, `aliases[${gi}][category]`, group.category);
         group.aliases.forEach((alias, ai) => {
@@ -123,7 +139,5 @@ function appendHidden(form, name, value) {
     form.appendChild(input);
 }
 
-// Initial render
-document.addEventListener('DOMContentLoaded', function() {
-    renderAliasGroups();
-});
+// initialise
+document.addEventListener('DOMContentLoaded', renderAliasGroups);
