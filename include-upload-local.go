@@ -49,10 +49,19 @@ func localFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
+	deleteSource := r.FormValue("delete_source") == "on"
+
 	id, warningMsg, err := processUpload(f, filepath.Base(absPath))
 	if err != nil {
 		renderError(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if deleteSource {
+		f.Close()
+		if removeErr := os.Remove(absPath); removeErr != nil {
+			warningMsg = strings.TrimPrefix(fmt.Sprintf("%s; could not delete source file: %v", warningMsg, removeErr), "; ")
+		}
 	}
 
 	redirectWithWarning(w, r, fmt.Sprintf("/file/%d", id), warningMsg)
