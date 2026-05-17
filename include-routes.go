@@ -10,6 +10,7 @@ func RegisterRoutes() {
 	http.HandleFunc("/", listFilesHandler)
 	http.HandleFunc("/add", uploadHandler)
 	http.HandleFunc("/add-yt", ytdlpHandler)
+	http.HandleFunc("/add-local", localFileHandler)
 	http.HandleFunc("/admin", adminHandler)
 	http.HandleFunc("/bulk-tag", bulkTagHandler)
 	http.HandleFunc("/cbz/", cbzViewerHandler)
