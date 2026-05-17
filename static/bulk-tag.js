@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Hover previews for recent images
   const IMAGE_EXTENSIONS = /\.(jpe?g|png|gif|webp)$/i;
+  const VIDEO_EXTENSIONS = /\.(mp4|webm|m4v)$/i;
 
   const tooltip = document.createElement('div');
   tooltip.id = 'thumb-tooltip';
@@ -140,9 +141,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.querySelectorAll('.file-item a').forEach(function (link) {
     const filename = link.title || link.textContent.trim();
-    if (!IMAGE_EXTENSIONS.test(filename)) return;
+    const isImage = IMAGE_EXTENSIONS.test(filename);
+    const isVideo = VIDEO_EXTENSIONS.test(filename);
+    if (!isImage && !isVideo) return;
 
-    const thumbUrl = '/uploads/' + filename;
+    const thumbUrl = isVideo
+      ? '/uploads/thumbnails/' + filename + '.jpg'
+      : '/uploads/' + filename;
 
     link.addEventListener('mouseenter', function () {
       tooltipImg.src = thumbUrl;
