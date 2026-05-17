@@ -4,7 +4,7 @@ function activateTab(contentPrefix, btnSelector, tabPrefix, tabName) {
         btn.style.fontWeight = 'normal';
     });
 
-    document.querySelectorAll(`[id^="${contentPrefix}"]`).forEach(el => {
+    document.querySelectorAll('[id^="' + contentPrefix + '"]').forEach(el => {
         el.style.display = 'none';
     });
 
@@ -27,7 +27,7 @@ function showThumbnailSubTab(subTabName) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    showAdminTab('settings');
+    showAdminTab(window.activeAdminTab || 'settings');
     showThumbnailSubTab('missing');
 
     document.querySelectorAll('.auto-hide-success').forEach(div => {

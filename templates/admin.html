@@ -293,34 +293,51 @@
     <div id="thumb-content-regenerate" style="display: none;">
         <h3>Regenerate Thumbnail</h3>
 
-        <div style="margin-bottom: 20px; padding: 10px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px;">
-            <strong>Tip:</strong> Enter a file ID to regenerate its thumbnail with a custom timestamp. You can find file IDs in the URL when viewing a file (e.g., /file/312).
+        <div style="display: flex; gap: 30px; align-items: flex-start;">
+
+            <div style="flex: 0 0 auto;">
+                <div style="margin-bottom: 20px; padding: 10px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; max-width: 500px;">
+                    <strong>Tip:</strong> Enter a file ID to regenerate its thumbnail with a custom timestamp. You can find file IDs in the URL when viewing a file (e.g., /file/312).
+                </div>
+
+                <form method="post" action="/thumbnails/generate" style="max-width: 500px; padding: 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="hidden" name="action" value="generate_single">
+                    <input type="hidden" name="redirect" value="admin">
+
+                    <div style="margin-bottom: 20px;">
+                        <label for="file_id" style="display: block; font-weight: bold; margin-bottom: 5px;">File ID:</label>
+                        <input type="text" id="file_id" name="file_id" required
+                               style="width: 100%; padding: 8px; font-size: 14px; font-family: monospace;"
+                               placeholder="e.g., 312">
+                        <small style="color: #666;">Enter the ID of the video file</small>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label for="timestamp" style="display: block; font-weight: bold; margin-bottom: 5px;">Timestamp:</label>
+                        <input type="text" id="timestamp" name="timestamp" value="00:00:05" required
+                               style="width: 100%; padding: 8px; font-size: 14px; font-family: monospace;"
+                               placeholder="00:00:05">
+                        <small style="color: #666;">Format: HH:MM:SS (e.g., 00:00:05 for 5 seconds)</small>
+                    </div>
+
+                    <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; width: 100%;">
+                        Generate/Regenerate Thumbnail
+                    </button>
+                </form>
+            </div>
+
+            <div style="flex: 1; min-width: 200px;">
+                <h4 style="margin-top: 0;">Recent Files (for reference)</h4>
+                {{range .Data.RecentFiles}}
+                <div class="file-item">
+                    <span class="file-id">ID {{.ID}}:</span> <a href="/file/{{.ID}}" title="{{.Filename}}">{{.Filename}}</a>
+                </div>
+                {{else}}
+                <div class="file-item">No files found</div>
+                {{end}}
+            </div>
+
         </div>
-
-        <form method="post" action="/thumbnails/generate" style="max-width: 500px; padding: 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
-            <input type="hidden" name="action" value="generate_single">
-            <input type="hidden" name="redirect" value="admin">
-
-            <div style="margin-bottom: 20px;">
-                <label for="file_id" style="display: block; font-weight: bold; margin-bottom: 5px;">File ID:</label>
-                <input type="text" id="file_id" name="file_id" required
-                       style="width: 100%; padding: 8px; font-size: 14px; font-family: monospace;"
-                       placeholder="e.g., 312">
-                <small style="color: #666;">Enter the ID of the video file</small>
-            </div>
-
-            <div style="margin-bottom: 20px;">
-                <label for="timestamp" style="display: block; font-weight: bold; margin-bottom: 5px;">Timestamp:</label>
-                <input type="text" id="timestamp" name="timestamp" value="00:00:05" required
-                       style="width: 100%; padding: 8px; font-size: 14px; font-family: monospace;"
-                       placeholder="00:00:05">
-                <small style="color: #666;">Format: HH:MM:SS (e.g., 00:00:05 for 5 seconds)</small>
-            </div>
-
-            <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; width: 100%;">
-                Generate/Regenerate Thumbnail
-            </button>
-        </form>
     </div>
 </div>
 
@@ -329,7 +346,8 @@
 <script>window.activeAdminTab = "{{.Data.ActiveTab}}";</script>
 <script src="/static/tag-alias.js" defer></script>
 <script src="/static/sed-rules.js" defer></script>
-<script src="/static/admin-tabs.js" defer></script>
+<script src="/static/admin-tabs.js"></script>
 <script src="/static/common.js" defer></script>
+<script src="/static/hover-preview.js" defer></script>
 
 {{template "_footer"}}

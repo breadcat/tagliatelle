@@ -138,6 +138,7 @@ type AdminPageData struct {
 	OrphanData        OrphanData
 	ActiveTab         string
 	MissingThumbnails []VideoFile
+	RecentFiles       []File
 }
 
 type notesAnalysis struct {

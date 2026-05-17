@@ -20,12 +20,29 @@ func renderAdminPage(w http.ResponseWriter, r *http.Request, data AdminPageData)
 	renderTemplate(w, "admin.html", pageData)
 }
 
+func getRecentFiles() []File {
+	rows, err := db.Query("SELECT id, filename FROM files ORDER BY id DESC LIMIT 20")
+	if err != nil {
+		log.Printf("Warning: getRecentFiles: failed to query recent files: %v", err)
+		return nil
+	}
+	defer rows.Close()
+	var files []File
+	for rows.Next() {
+		var f File
+		rows.Scan(&f.ID, &f.Filename)
+		files = append(files, f)
+	}
+	return files
+}
+
 func currentAdminState(r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) AdminPageData {
 	return AdminPageData{
 		Config:            config,
 		OrphanData:        orphanData,
 		ActiveTab:         r.FormValue("active_tab"),
 		MissingThumbnails: missingThumbnails,
+		RecentFiles:       getRecentFiles(),
 	}
 }
 
