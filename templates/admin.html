@@ -326,16 +326,7 @@
                 </form>
             </div>
 
-            <div style="flex: 1; min-width: 200px;">
-                <h4 style="margin-top: 0;">Recent Files (for reference)</h4>
-                {{range .Data.RecentFiles}}
-                <div class="file-item">
-                    <span class="file-id">ID {{.ID}}:</span> <a href="/file/{{.ID}}" title="{{.Filename}}">{{.Filename}}</a>
-                </div>
-                {{else}}
-                <div class="file-item">No files found</div>
-                {{end}}
-            </div>
+            {{template "_recent" .}}
 
         </div>
     </div>

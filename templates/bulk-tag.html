@@ -10,6 +10,11 @@
             <strong>Success:</strong> {{.Data.Success}}
         </div>
         {{end}}
+
+        <div style="display: flex; gap: 30px; align-items: flex-start;">
+
+            <div style="flex: 0 0 auto;">
+
         <form method="POST">
             <div class="form-section">
                 <h3>Select Files</h3>
@@ -91,16 +96,13 @@
             </div>
             <button type="submit" class="text-button">Apply Tags</button>
         </form>
-		<br>
-		<details><summary>Recent Files (for reference)</summary>
-                {{range .Data.RecentFiles}}
-                <div class="file-item">
-                    <span class="file-id">ID {{.ID}}:</span> <a href="/file/{{.ID}}" title="{{.Filename}}">{{.Filename}}</a>
-                </div>
-                {{else}}
-                <div class="file-item">No files found</div>
-                {{end}}
-		</details>
+
+        </div>
+
+{{template "_recent" .}}
+
     <script src="/static/bulk-tag.js" defer></script>
-    <script src="/static/hover-preview.js" defer></script>
+
+        </div>
+
 {{template "_footer"}}
