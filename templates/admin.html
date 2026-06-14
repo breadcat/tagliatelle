@@ -2,35 +2,35 @@
 <h1>Admin</h1>
 
 {{if .Data.Error}}
-<div style="background-color: #f8d7da; color: #721c24; padding: 10px; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 20px;">
+<div class="admin-alert admin-alert--error">
     <strong>Error:</strong> {{.Data.Error}}
 </div>
 {{end}}
 
 {{if .Data.Success}}
-<div style="background-color: #d4edda; color: #155724; padding: 10px; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 20px;">
+<div class="admin-alert admin-alert--success">
     <strong>Success:</strong> {{.Data.Success}}
 </div>
 {{end}}
 
 <!-- Tab Navigation -->
-<div style="margin-bottom: 20px; border-bottom: 2px solid #ddd;">
-    <button onclick="showAdminTab('settings')" id="admin-tab-settings" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid #007bff; font-weight: bold;">
+<div class="admin-tab-nav">
+    <button onclick="showAdminTab('settings')" id="admin-tab-settings" class="admin-tab-btn admin-tab-btn--active">
         Settings
     </button>
-    <button onclick="showAdminTab('database')" id="admin-tab-database" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+    <button onclick="showAdminTab('database')" id="admin-tab-database" class="admin-tab-btn">
         Database
     </button>
-    <button onclick="showAdminTab('aliases')" id="admin-tab-aliases" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+    <button onclick="showAdminTab('aliases')" id="admin-tab-aliases" class="admin-tab-btn">
         Aliases
     </button>
-    <button onclick="showAdminTab('sedrules')" id="admin-tab-sedrules" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+    <button onclick="showAdminTab('sedrules')" id="admin-tab-sedrules" class="admin-tab-btn">
         Sed Rules
     </button>
-    <button onclick="showAdminTab('orphans')" id="admin-tab-orphans" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+    <button onclick="showAdminTab('orphans')" id="admin-tab-orphans" class="admin-tab-btn">
         Orphans
     </button>
-    <button onclick="showAdminTab('thumbnails')" id="admin-tab-thumbnails" class="admin-tab-btn" style="padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 3px solid transparent;">
+    <button onclick="showAdminTab('thumbnails')" id="admin-tab-thumbnails" class="admin-tab-btn">
         Thumbnails
     </button>
 </div>
@@ -40,26 +40,24 @@
 	<div class="config-container">
     <div class="config-split">
     <h2>Settings</h2>
-    <form method="post" style="max-width: 600px;">
+    <form method="post" class="admin-form">
         <input type="hidden" name="active_tab" value="settings">
 
-        <div style="margin-bottom: 20px;">
-            <label for="gallery_size" style="display: block; font-weight: bold; margin-bottom: 5px;">Gallery Size:</label>
+        <div class="admin-form-group">
+            <label for="gallery_size" class="admin-form-label">Gallery Size:</label>
             <input type="text" id="gallery_size" name="gallery_size" value="{{.Data.Config.GallerySize}}" required
-                   style="width: 100%; padding: 8px; font-size: 14px;"
                    placeholder="400px">
-            <small style="color: #666;">Size of previews used in galleries</small>
+            <small class="admin-hint">Size of previews used in galleries</small>
         </div>
 
-        <div style="margin-bottom: 20px;">
-            <label for="items_per_page" style="display: block; font-weight: bold; margin-bottom: 5px;">Items per Page:</label>
+        <div class="admin-form-group">
+            <label for="items_per_page" class="admin-form-label">Items per Page:</label>
             <input type="text" id="items_per_page" name="items_per_page" value="{{.Data.Config.ItemsPerPage}}" required
-                   style="width: 100%; padding: 8px; font-size: 14px;"
                    placeholder="100">
-            <small style="color: #666;">Items per page in galleries</small>
+            <small class="admin-hint">Items per page in galleries</small>
         </div>
 
-        <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+        <button type="submit" class="admin-btn admin-btn--primary">
             Save Settings
         </button>
     </form>
@@ -83,62 +81,62 @@
 </div>
 
 <!-- Database Tab -->
-<div id="admin-content-database" style="display: none;">
+<div id="admin-content-database" class="admin-tab-content">
     <h2>Database Maintenance</h2>
 
-    <form method="post" style="margin-bottom: 20px;">
+    <form method="post" class="admin-form-inline">
         <input type="hidden" name="active_tab" value="database">
         <input type="hidden" name="action" value="backup">
-        <button type="submit" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+        <button type="submit" class="admin-btn admin-btn--success">
             Backup Database
         </button>
-        <small style="color: #666; margin-left: 10px;">Creates a timestamped backup of the database file</small>
+        <small class="admin-hint admin-hint--inline">Creates a timestamped backup of the database file</small>
     </form>
 
     <form method="post">
         <input type="hidden" name="active_tab" value="database">
         <input type="hidden" name="action" value="vacuum">
-        <button type="submit" style="background-color: #6f42c1; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+        <button type="submit" class="admin-btn admin-btn--purple">
             Vacuum Database
         </button>
-        <small style="color: #666; margin-left: 10px;">Reclaims unused space and optimizes database performance</small>
+        <small class="admin-hint admin-hint--inline">Reclaims unused space and optimizes database performance</small>
     </form>
 
-    <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+    <hr class="admin-divider">
     <h3>File Properties</h3>
-    <p style="color: #666; margin-bottom: 10px;">
+    <p class="admin-hint">
         Compute auto-detected properties (filetype, duration, orientation, resolution) for any files that do not yet have them.
     </p>
     <form method="post">
         <input type="hidden" name="active_tab" value="database">
         <input type="hidden" name="action" value="compute_properties">
-        <button type="submit" style="background-color: #17a2b8; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+        <button type="submit" class="admin-btn admin-btn--teal">
             Compute Missing Properties
         </button>
-        <small style="color: #666; margin-left: 10px;">Processes only files with no existing properties</small>
+        <small class="admin-hint admin-hint--inline">Processes only files with no existing properties</small>
     </form>
 </div>
 
 <!-- Aliases Tab -->
-<div id="admin-content-aliases" style="display: none;">
+<div id="admin-content-aliases" class="admin-tab-content">
     <h2>Tag Aliases</h2>
     <p>
         Define tag aliases so that multiple tag values are treated as equivalent when searching or filtering.
         For example, if you alias "colour/blue" with "colour/navy", searching for either will show files tagged with both.
     </p>
 
-    <div id="aliases-section" style="max-width: 800px;">
+    <div id="aliases-section" class="admin-section">
         <div id="alias-groups"></div>
 
-        <button onclick="addAliasGroup()" style="background-color: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; margin-top: 10px;">
+        <button onclick="addAliasGroup()" class="admin-btn admin-btn--success admin-btn--sm admin-btn--top">
             + Add Alias Group
         </button>
 
-        <form method="post" id="aliases-form" style="margin-top: 20px;">
+        <form method="post" id="aliases-form" class="admin-form-top">
             <input type="hidden" name="active_tab" value="aliases">
             <input type="hidden" name="action" value="save_aliases">
             <input type="hidden" name="aliases_json" id="aliases_json">
-            <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+            <button type="submit" class="admin-btn admin-btn--primary">
                 Save Aliases
             </button>
         </form>
@@ -146,7 +144,7 @@
 </div>
 
 <!-- Sed Rules Tab -->
-<div id="admin-content-sedrules" style="display: none;">
+<div id="admin-content-sedrules" class="admin-tab-content">
 	<div class="config-container">
     <div class="config-split">
     <h2>Sed Rules for Notes</h2>
@@ -155,18 +153,18 @@
         These rules will appear as buttons in the notes interface for quick text transformations.
     </p>
 
-    <div id="sedrules-section" style="max-width: 800px;">
+    <div id="sedrules-section" class="admin-section">
         <div id="sed-rules"></div>
 
-        <button onclick="addSedRule()" style="background-color: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; margin-top: 10px;">
+        <button onclick="addSedRule()" class="admin-btn admin-btn--success admin-btn--sm admin-btn--top">
             + Add Sed Rule
         </button>
 
-        <form method="post" action="/admin" id="sedrules-form" style="margin-top: 20px;">
+        <form method="post" action="/admin" id="sedrules-form" class="admin-form-top">
             <input type="hidden" name="active_tab" value="sedrules">
             <input type="hidden" name="action" value="save_sed_rules">
             <input type="hidden" name="sed_rules_json" id="sed_rules_json">
-            <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+            <button type="submit" class="admin-btn admin-btn--primary">
                 Save Sed Rules
             </button>
         </form>
@@ -174,8 +172,8 @@
     </div>
 
     <div class="config-split">
-        <h4 style="margin-top: 0;">Example Sed Commands:</h4>
-        <ul style="font-family: monospace; font-size: 13px;">
+        <h4 class="admin-example-heading">Example Sed Commands:</h4>
+        <ul class="admin-example-list">
             <li><code>s?[?&]brandIds=[0-9]\+&productId=[0-9]\+??g</code> - Remove URL parameters</li>
             <li><code>s/[[:space:]]*$//</code> - Remove trailing whitespace</li>
             <li><code>s/  \+/ /g</code> - Replace multiple spaces with single space</li>
@@ -187,54 +185,54 @@
 </div>
 
 <!-- Orphans Tab -->
-<div id="admin-content-orphans" style="display: none;">
+<div id="admin-content-orphans" class="admin-tab-content">
     <h2>Orphaned Files</h2>
 
     <!-- Files on disk, not in DB -->
-    <h3 style="margin-top: 24px;">Disk Orphans</h3>
-    <p style="color: #666; margin-bottom: 12px;">
+    <h3 class="admin-orphan-heading">Disk Orphans</h3>
+    <p class="admin-hint admin-hint--spaced">
         These files exist in the upload directory but are not tracked in the database.
     </p>
     {{if .Data.OrphanData.Orphans}}
-    <ul style="list-style-type: disc; padding-left: 20px;">
+    <ul class="admin-orphan-list">
       {{range .Data.OrphanData.Orphans}}
-        <li style="margin-bottom: 5px; font-family: monospace;">{{.}}</li>
+        <li class="admin-orphan-item">{{.}}</li>
       {{end}}
     </ul>
     {{else}}
-    <div style="padding: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px;">
+    <div class="admin-alert admin-alert--success">
         <strong>✓ No disk orphans found!</strong>
     </div>
     {{end}}
 
     <!-- Files in DB, not on disk -->
-    <h3 style="margin-top: 32px;">Database Orphans</h3>
-    <p style="color: #666; margin-bottom: 12px;">
+    <h3 class="admin-orphan-heading admin-orphan-heading--db">Database Orphans</h3>
+    <p class="admin-hint admin-hint--spaced">
         These files are tracked in the database but are missing from the upload directory.
     </p>
     {{if .Data.OrphanData.ReverseOrphans}}
-    <ul style="list-style-type: disc; padding-left: 20px;">
+    <ul class="admin-orphan-list">
       {{range .Data.OrphanData.ReverseOrphans}}
-        <li style="margin-bottom: 5px; font-family: monospace;">{{.}}</li>
+        <li class="admin-orphan-item">{{.}}</li>
       {{end}}
     </ul>
     {{else}}
-    <div style="padding: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px;">
+    <div class="admin-alert admin-alert--success">
         <strong>✓ No database orphans found!</strong>
     </div>
     {{end}}
 </div>
 
 <!-- Thumbnails Tab -->
-<div id="admin-content-thumbnails" style="display: none;">
+<div id="admin-content-thumbnails" class="admin-tab-content">
     <h2>Thumbnail Management</h2>
 
     <!-- Sub-tab Navigation -->
-    <div style="margin-bottom: 20px; border-bottom: 1px solid #ddd;">
-        <button onclick="showThumbnailSubTab('missing')" id="thumb-subtab-missing" class="thumb-subtab-btn" style="padding: 8px 16px; border: none; background: none; cursor: pointer; border-bottom: 2px solid #007bff; font-weight: bold;">
+    <div class="admin-subtab-nav">
+        <button onclick="showThumbnailSubTab('missing')" id="thumb-subtab-missing" class="thumb-subtab-btn thumb-subtab-btn--active">
             Missing ({{len .Data.MissingThumbnails}})
         </button>
-        <button onclick="showThumbnailSubTab('regenerate')" id="thumb-subtab-regenerate" class="thumb-subtab-btn" style="padding: 8px 16px; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent;">
+        <button onclick="showThumbnailSubTab('regenerate')" id="thumb-subtab-regenerate" class="thumb-subtab-btn">
             Regenerate
         </button>
     </div>
@@ -244,38 +242,38 @@
         <h3>Missing Thumbnails ({{len .Data.MissingThumbnails}})</h3>
 
         {{if .Data.MissingThumbnails}}
-            <form method="post" action="/thumbnails/generate" style="margin-bottom: 20px;">
+            <form method="post" action="/thumbnails/generate" class="admin-form-inline">
                 <input type="hidden" name="action" value="generate_all">
-                <button type="submit" onclick="return confirm('Generate thumbnails for all {{len .Data.MissingThumbnails}} videos? This may take a while.');" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer;">
+                <button type="submit" onclick="return confirm('Generate thumbnails for all {{len .Data.MissingThumbnails}} videos? This may take a while.');" class="admin-btn admin-btn--success">
                     Generate All Missing Thumbnails
                 </button>
-                <small style="color: #666; margin-left: 10px;">Uses timestamp 00:00:05 for all videos</small>
+                <small class="admin-hint admin-hint--inline">Uses timestamp 00:00:05 for all videos</small>
             </form>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            <div class="admin-thumb-grid">
                 {{range .Data.MissingThumbnails}}
-                <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #f8f9fa;">
-                    <h4 style="margin-top: 0; font-size: 14px; word-break: break-word;">
+                <div class="admin-thumb-card">
+                    <h4 class="admin-thumb-card__title">
                         <a href="/file/{{.ID}}" target="_blank">{{.Filename}}</a>
                     </h4>
-                    <p style="color: #666; font-size: 12px; margin: 5px 0;">ID: {{.ID}}</p>
+                    <p class="admin-thumb-card__id">ID: {{.ID}}</p>
 
-                    <video width="100%" style="max-height: 200px; background: #000; margin: 10px 0; cursor: pointer;" title="Click to capture frame">
+                    <video class="admin-thumb-card__video" title="Click to capture frame">
                         <source src="/uploads/{{.EscapedFilename}}">
                     </video>
 
-                    <form method="post" action="/thumbnails/generate" style="margin-top: 10px;">
+                    <form method="post" action="/thumbnails/generate" class="admin-thumb-card__form">
                         <input type="hidden" name="action" value="generate_single">
                         <input type="hidden" name="file_id" value="{{.ID}}">
                         <input type="hidden" name="redirect" value="admin">
 
-                        <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 10px;">
-                            <label style="font-size: 13px; white-space: nowrap;">Timestamp:</label>
+                        <div class="admin-thumb-card__timestamp-row">
+                            <label class="admin-thumb-card__timestamp-label">Timestamp:</label>
                             <input type="text" name="timestamp" value="00:00:05" placeholder="00:00:05"
-                                   style="flex: 1; padding: 5px; font-size: 13px; font-family: monospace;">
+                                   class="admin-thumb-card__timestamp-input">
                         </div>
 
-                        <button type="submit" style="background-color: #007bff; color: white; padding: 6px 12px; border: none; border-radius: 3px; font-size: 13px; cursor: pointer; width: 100%;">
+                        <button type="submit" class="admin-btn admin-btn--primary admin-btn--full">
                             Generate Thumbnail
                         </button>
                     </form>
@@ -283,44 +281,44 @@
                 {{end}}
             </div>
         {{else}}
-            <div style="padding: 20px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; border-radius: 4px;">
+            <div class="admin-alert admin-alert--success">
                 <strong>✓ All videos have thumbnails!</strong>
             </div>
         {{end}}
     </div>
 
     <!-- Regenerate Sub-tab -->
-    <div id="thumb-content-regenerate" style="display: none;">
+    <div id="thumb-content-regenerate" class="admin-tab-content">
         <h3>Regenerate Thumbnail</h3>
 
-        <div style="display: flex; gap: 30px; align-items: flex-start;">
+        <div class="admin-regen-layout">
 
-            <div style="flex: 0 0 auto;">
-                <div style="margin-bottom: 20px; padding: 10px; background-color: #e7f3ff; border: 1px solid #b3d9ff; border-radius: 4px; max-width: 500px;">
+            <div class="admin-regen-form-col">
+                <div class="admin-tip-box">
                     <strong>Tip:</strong> Enter a file ID to regenerate its thumbnail with a custom timestamp. You can find file IDs in the URL when viewing a file (e.g., /file/312).
                 </div>
 
-                <form method="post" action="/thumbnails/generate" style="max-width: 500px; padding: 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
+                <form method="post" action="/thumbnails/generate" class="admin-regen-form">
                     <input type="hidden" name="action" value="generate_single">
                     <input type="hidden" name="redirect" value="admin">
 
-                    <div style="margin-bottom: 20px;">
-                        <label for="file_id" style="display: block; font-weight: bold; margin-bottom: 5px;">File ID:</label>
+                    <div class="admin-form-group">
+                        <label for="file_id" class="admin-form-label">File ID:</label>
                         <input type="text" id="file_id" name="file_id" required
-                               style="width: 100%; padding: 8px; font-size: 14px; font-family: monospace;"
+                               class="admin-mono-input"
                                placeholder="e.g., 312">
-                        <small style="color: #666;">Enter the ID of the video file</small>
+                        <small class="admin-hint">Enter the ID of the video file</small>
                     </div>
 
-                    <div style="margin-bottom: 20px;">
-                        <label for="timestamp" style="display: block; font-weight: bold; margin-bottom: 5px;">Timestamp:</label>
+                    <div class="admin-form-group">
+                        <label for="timestamp" class="admin-form-label">Timestamp:</label>
                         <input type="text" id="timestamp" name="timestamp" value="00:00:05" required
-                               style="width: 100%; padding: 8px; font-size: 14px; font-family: monospace;"
+                               class="admin-mono-input"
                                placeholder="00:00:05">
-                        <small style="color: #666;">Format: HH:MM:SS (e.g., 00:00:05 for 5 seconds)</small>
+                        <small class="admin-hint">Format: HH:MM:SS (e.g., 00:00:05 for 5 seconds)</small>
                     </div>
 
-                    <button type="submit" style="background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; width: 100%;">
+                    <button type="submit" class="admin-btn admin-btn--primary admin-btn--full">
                         Generate/Regenerate Thumbnail
                     </button>
                 </form>
