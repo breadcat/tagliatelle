@@ -156,19 +156,22 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 				var err error
 				sourceTags, err = getPreviousFileTags(f.ID)
 				if err != nil {
-					http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Could not copy tags from previous file: "+err.Error()), http.StatusSeeOther)
+					log.Printf("Warning: fileHandler: could not copy tags from previous file for file id=%d: %v", f.ID, err)
+					http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 					return
 				}
 				sourceDesc = "previous file"
 			} else {
 				sourceID, err := strconv.Atoi(cat[1:])
 				if err != nil {
-					http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Invalid file ID in category: "+cat), http.StatusSeeOther)
+					log.Printf("Warning: fileHandler: invalid file ID in category %q for file id=%d", cat, f.ID)
+					http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 					return
 				}
 				sourceTags, err = getFileTagsByID(sourceID)
 				if err != nil {
-					http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape(fmt.Sprintf("Could not copy tags from file %d: %s", sourceID, err.Error())), http.StatusSeeOther)
+					log.Printf("Warning: fileHandler: could not copy tags from file %d for file id=%d: %v", sourceID, f.ID, err)
+					http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 					return
 				}
 				sourceDesc = fmt.Sprintf("file %d", sourceID)
@@ -184,20 +187,21 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 					log.Printf("Error: fileHandler: failed to add tag %s:%s to file id=%d: %v", tag.cat, tag.val, f.ID, err)
 				}
 			}
-			http.Redirect(w, r, "/file/"+idStr+"?success="+url.QueryEscape(fmt.Sprintf("Copied %d tag(s) from %s", len(sourceTags), sourceDesc)), http.StatusSeeOther)
+			http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 			return
 		}
 
 		if cat == "" || val == "" {
-			http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Category and value must not be empty"), http.StatusSeeOther)
+			log.Printf("Warning: fileHandler: empty category/value submitted for file id=%d", f.ID)
+			http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 			return
 		}
 
-		originalVal := val
 		if val == "!" {
 			previousVal, err := getPreviousTagValue(cat, f.ID)
 			if err != nil {
-				http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("No previous tag found for category: "+cat), http.StatusSeeOther)
+				log.Printf("Warning: fileHandler: no previous tag found for category %q for file id=%d: %v", cat, f.ID, err)
+				http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 				return
 			}
 			val = previousVal
@@ -205,16 +209,12 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		_, tagID, err := getOrCreateCategoryAndTag(cat, val)
 		if err != nil {
 			log.Printf("Error: fileHandler: failed to create tag %s:%s for file id=%d: %v", cat, val, f.ID, err)
-			http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Failed to create tag: "+err.Error()), http.StatusSeeOther)
+			http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 			return
 		}
 		if _, err = db.Exec("INSERT OR IGNORE INTO file_tags(file_id, tag_id) VALUES (?, ?)", f.ID, tagID); err != nil {
 			log.Printf("Error: fileHandler: failed to add tag %s:%s to file id=%d: %v", cat, val, f.ID, err)
-			http.Redirect(w, r, "/file/"+idStr+"?error="+url.QueryEscape("Failed to add tag: "+err.Error()), http.StatusSeeOther)
-			return
-		}
-		if originalVal == "!" {
-			http.Redirect(w, r, "/file/"+idStr+"?success="+url.QueryEscape("Tag '"+cat+": "+val+"' copied from previous file"), http.StatusSeeOther)
+			http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 			return
 		}
 		http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
