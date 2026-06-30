@@ -7,13 +7,13 @@
 
     <details open>
     <summary>Tags</summary>
-	<ul>
+	<ul id="tags-list">
 	{{range $k, $vs := .Data.File.Tags}}
 	  <li>
 		<span class="file-tag-category">{{$k}}:</span><br>
 		{{range $i, $v := $vs}}
 		  {{if $i}}<br> {{end}}
-		  <form method="post" action="/file/{{$.Data.File.ID}}/tag/delete"><input type="hidden" name="category" value="{{$k}}"><input type="hidden" name="value" value="{{$v}}"><button class="text-button" type="submit">x</button></form>
+		  <form method="post" action="/file/{{$.Data.File.ID}}/tag/delete" class="ajax-tag-form"><input type="hidden" name="category" value="{{$k}}"><input type="hidden" name="value" value="{{$v}}"><button class="text-button" type="submit">x</button></form>
 		  <a href="/tag/{{pathEscape $k}}/{{pathEscape $v}}">{{$v}}</a>
 		{{end}}
 	  </li>
@@ -25,13 +25,15 @@
 
     <details>
     <summary>Add Tags</summary>
-		<form method="post">
+		<form method="post" class="ajax-tag-form">
 		  <input type="text" name="category" list="categories" placeholder="Category"><br>
 		  <datalist id="categories">{{range .Data.Categories}}<option value="{{.}}">{{end}}</datalist>
 		  <input type="text" name="value" placeholder="Value"><br>
 		  <button class="text-button" type="submit">Add Tag</button>
 		</form>
 	</details>
+	<div id="tag-status"></div>
+	<script src="/static/ajax-tags.js" defer></script>
 
     <details>
     <summary>Properties</summary>
