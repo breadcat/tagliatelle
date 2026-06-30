@@ -48,6 +48,7 @@ async function handleAjaxTagSubmit(e) {
     if (catInput && valInput) {
       catInput.value = '';
       valInput.value = '';
+      catInput.focus();
     }
 
     // Re-bind the delete buttons that just got swapped in
