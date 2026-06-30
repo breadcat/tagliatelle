@@ -8,6 +8,12 @@ import (
 	"strings"
 )
 
+type Breadcrumb struct {
+	Name  string
+	URL   string
+	Count int // 0 = not shown
+}
+
 func untaggedFilesHandler(w http.ResponseWriter, r *http.Request) {
 	page := pageFromRequest(r)
 	perPage := perPageFromConfig(50)
@@ -186,6 +192,9 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 			Untagged:    nil,
 			Breadcrumbs: []Breadcrumb{},
 		}, 1, len(files), len(files), r)
+		if len(breadcrumbs) > 0 {
+			breadcrumbs[len(breadcrumbs)-1].Count = len(files)
+		}
 		pageData.Breadcrumbs = breadcrumbs
 
 		renderTemplate(w, "list.html", pageData)
@@ -223,6 +232,9 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 		Untagged:    nil,
 		Breadcrumbs: []Breadcrumb{},
 	}, page, total, perPage, r)
+	if len(breadcrumbs) > 0 {
+		breadcrumbs[len(breadcrumbs)-1].Count = total
+	}
 	pageData.Breadcrumbs = breadcrumbs
 
 	renderTemplate(w, "list.html", pageData)

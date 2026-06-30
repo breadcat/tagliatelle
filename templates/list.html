@@ -9,6 +9,7 @@
     {{else}}
       <a href="/tags#tag-{{$crumb.Name}}">{{$crumb.Name}}</a>
     {{end}}
+    {{if gt $crumb.Count 0}}&nbsp;({{$crumb.Count}}){{end}}
   {{end}}
 </div>
 {{else}}

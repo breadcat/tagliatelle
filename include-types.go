@@ -21,11 +21,6 @@ type Config struct {
 	SedRules     []SedRule
 }
 
-type Breadcrumb struct {
-	Name string
-	URL  string
-}
-
 type TagAliasGroup struct {
 	Category string   `json:"category"`
 	Aliases  []string `json:"aliases"`
