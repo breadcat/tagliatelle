@@ -76,8 +76,6 @@ func getVideoFiles() ([]VideoFile, error) {
 	return videos, nil
 }
 
-
-
 func thumbnailsHandler(w http.ResponseWriter, r *http.Request) {
 	allVideos, err := getVideoFiles()
 	if err != nil {
