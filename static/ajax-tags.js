@@ -42,49 +42,18 @@ async function handleAjaxTagSubmit(e) {
       currentCategories.innerHTML = newCategories.innerHTML;
     }
 
-    // Show success/error message, pulled from the redirected URL's query params
-    const finalUrl = new URL(response.url, window.location.origin);
-    const statusEl = document.getElementById('tag-status');
-    const success = finalUrl.searchParams.get('success');
-    const error = finalUrl.searchParams.get('error');
-    if (statusEl) {
-      if (error) {
-        statusEl.textContent = error;
-        statusEl.className = 'tag-status-error';
-      } else if (success) {
-        statusEl.textContent = success;
-        statusEl.className = 'tag-status-success';
-      } else {
-        statusEl.textContent = '';
-        statusEl.className = '';
-      }
-      if (success || error) {
-        setTimeout(() => {
-          statusEl.textContent = '';
-          statusEl.className = '';
-        }, 4000);
-      }
-    }
-
-    // Clear the "Add Tag" inputs after a successful add
-    if (!error) {
-      const catInput = form.querySelector('input[name="category"]');
-      const valInput = form.querySelector('input[name="value"]');
-      if (catInput && form.querySelector('button[type="submit"]').textContent.includes('Add')) {
-        catInput.value = '';
-        valInput.value = '';
-      }
+    // Clear the "Add Tag" inputs after a submit
+    const catInput = form.querySelector('input[name="category"]');
+    const valInput = form.querySelector('input[name="value"]');
+    if (catInput && valInput) {
+      catInput.value = '';
+      valInput.value = '';
     }
 
     // Re-bind the delete buttons that just got swapped in
     initAjaxTagForms();
   } catch (err) {
     console.error('Tag update failed:', err);
-    const statusEl = document.getElementById('tag-status');
-    if (statusEl) {
-      statusEl.textContent = 'Failed to update tag. Please try again.';
-      statusEl.className = 'tag-status-error';
-    }
   } finally {
     if (submitButton) submitButton.disabled = false;
   }
