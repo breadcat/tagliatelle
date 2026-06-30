@@ -21,7 +21,11 @@
     {{range $cat, $tags := .Tags}}<li>
         <a href="/tags#tag-{{$cat}}">{{$cat}}</a>
         <ul>
-          {{range $tags}}<li><a href="/tag/{{$cat}}/{{.Value}}">{{.Value}} ({{.Count}})</a></li>
+          {{if gt (len $tags) 65}}
+            <li><a href="/tags#tag-{{$cat}}">{{len $tags}} entries...</a></li>
+          {{else}}
+            {{range $tags}}<li><a href="/tag/{{$cat}}/{{.Value}}">{{.Value}} ({{.Count}})</a></li>
+            {{end}}
           {{end}}<li><a href="/tag/{{$cat}}/previews">Previews</a></li>
           <li><a href="/tag/{{$cat}}/unassigned">Unassigned</a></li>
         </ul>
