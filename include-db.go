@@ -7,6 +7,23 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type Config struct {
+	// Values from CLI arguments
+	DatabasePath string
+	UploadDir    string
+	ServerPort   string
+	// Values from database
+	GallerySize  string
+	ItemsPerPage string
+	TagAliases   []TagAliasGroup
+	SedRules     []SedRule
+}
+
+type TagAliasGroup struct {
+	Category string   `json:"category"`
+	Aliases  []string `json:"aliases"`
+}
+
 // InitDatabase opens the database connection and creates tables if needed
 func InitDatabase(dbPath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dbPath+"?_busy_timeout=5000")

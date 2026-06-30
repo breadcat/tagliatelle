@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+type Pagination struct {
+	CurrentPage int
+	TotalPages  int
+	HasPrev     bool
+	HasNext     bool
+	PrevPage    int
+	NextPage    int
+	PerPage     int
+	PageBaseURL string
+}
+
 func pageFromRequest(r *http.Request) int {
 	if p, err := strconv.Atoi(r.URL.Query().Get("page")); err == nil && p > 0 {
 		return p

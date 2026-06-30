@@ -6,6 +6,11 @@ import (
     "os"
 )
 
+type OrphanData struct {
+	Orphans        []string // on disk, not in DB
+	ReverseOrphans []string // in DB, not on disk
+}
+
 func getOrphanedFiles(uploadDir string) (OrphanData, error) {
 	diskFiles, err := getFilesOnDisk(uploadDir)
 	if err != nil {

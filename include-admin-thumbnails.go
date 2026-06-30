@@ -12,6 +12,15 @@ import (
     "strings"
 )
 
+type VideoFile struct {
+	ID              int
+	Filename        string
+	Path            string
+	HasThumbnail    bool
+	ThumbnailPath   string
+	EscapedFilename string
+}
+
 func generateThumbnailAtTime(videoPath, uploadDir, filename, timestamp string) error {
 	thumbDir := filepath.Join(uploadDir, "thumbnails")
 	if err := os.MkdirAll(thumbDir, 0755); err != nil {

@@ -12,6 +12,22 @@ import (
 	"time"
 )
 
+type AdminPageData struct {
+	Config            Config
+	Error             string
+	Success           string
+	OrphanData        OrphanData
+	ActiveTab         string
+	MissingThumbnails []VideoFile
+	RecentFiles       []File
+}
+
+type SedRule struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Command     string `json:"command"`
+}
+
 func renderAdminPage(w http.ResponseWriter, r *http.Request, data AdminPageData) {
 	if data.ActiveTab == "" {
 		data.ActiveTab = r.FormValue("active_tab")

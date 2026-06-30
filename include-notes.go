@@ -14,6 +14,18 @@ import (
 	"strings"
 )
 
+type notesAnalysis struct {
+	Stats      map[string]int
+	Categories []string
+	LineCount  int
+}
+
+type Note struct {
+	Category string
+	Value    string
+	Original string // The full line as stored
+}
+
 // GetNotes retrieves the notes content from database
 func GetNotes(db *sql.DB) (string, error) {
 	var content string

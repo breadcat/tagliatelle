@@ -9,6 +9,26 @@ import (
 	"strings"
 )
 
+type TagPair struct {
+	Category string
+	Value    string
+}
+
+type BulkTagFormData struct {
+	Categories  []string
+	RecentFiles []File
+	Error       string
+	Success     string
+	FormData    struct {
+		FileRange     string
+		Category      string
+		Value         string
+		Operation     string
+		TagQuery      string
+		SelectionMode string
+	}
+}
+
 func applyBulkTagOperations(fileIDs []int, category, value, operation string) error {
 	category = strings.TrimSpace(category)
 	value = strings.TrimSpace(value)

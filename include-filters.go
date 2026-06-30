@@ -14,6 +14,14 @@ type Breadcrumb struct {
 	Count int // 0 = not shown
 }
 
+type filter struct {
+	Category   string
+	Value      string
+	Values     []string // Expanded values including aliases
+	IsPreviews bool     // New field to indicate preview mode
+	IsProperty bool
+}
+
 func untaggedFilesHandler(w http.ResponseWriter, r *http.Request) {
 	page := pageFromRequest(r)
 	perPage := perPageFromConfig(50)

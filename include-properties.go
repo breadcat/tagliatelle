@@ -15,6 +15,11 @@ import (
 	"strings"
 )
 
+type PropertyDisplay struct {
+	Value string
+	Count int
+}
+
 func computeProperties(fileID int64, filePath string) {
 	ext := strings.ToLower(filepath.Ext(filePath))
 

@@ -14,6 +14,11 @@ import (
 	"strings"
 )
 
+type CBZImage struct {
+	Filename string
+	Index    int
+}
+
 // generateCBZThumbnail creates a 2x2 collage thumbnail from a CBZ file
 func generateCBZThumbnail(cbzPath, uploadDir, filename string) error {
 
