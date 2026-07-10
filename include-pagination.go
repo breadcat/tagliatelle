@@ -96,11 +96,17 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 
 	var total int
 	err := db.QueryRow(`
-		SELECT COUNT(DISTINCT f.id)
-		FROM files f
-		LEFT JOIN file_tags ft ON ft.file_id = f.id
-		LEFT JOIN tags t ON t.id = ft.tag_id
-		WHERE LOWER(f.filename) LIKE ? OR LOWER(f.description) LIKE ? OR LOWER(t.value) LIKE ?
+		SELECT COUNT(*)
+		FROM (
+			SELECT f.id
+			FROM files f
+			LEFT JOIN file_tags ft ON ft.file_id = f.id
+			LEFT JOIN tags t ON t.id = ft.tag_id
+			WHERE LOWER(f.filename) LIKE ?
+			   OR LOWER(f.description) LIKE ?
+			   OR LOWER(t.value) LIKE ?
+			GROUP BY f.id
+		) matched
 	`, sqlPattern, sqlPattern, sqlPattern).Scan(&total)
 	if err != nil {
 		return nil, 0, err
@@ -108,22 +114,34 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 
 	offset := (page - 1) * perPage
 	rows, err := db.Query(`
-		SELECT f.id, f.filename, f.path, COALESCE(f.description, '') AS description,
-		       c.name AS category, t.value AS tag
-		FROM files f
-		LEFT JOIN file_tags ft ON ft.file_id = f.id
-		LEFT JOIN tags t ON t.id = ft.tag_id
-		LEFT JOIN categories c ON c.id = t.category_id
-		WHERE f.id IN (
-			SELECT DISTINCT f2.id
+		SELECT
+			f.id,
+			f.filename,
+			f.path,
+			COALESCE(f.description, '') AS description,
+			c.name AS category,
+			t.value AS tag
+		FROM (
+			SELECT f2.id
 			FROM files f2
 			LEFT JOIN file_tags ft2 ON ft2.file_id = f2.id
 			LEFT JOIN tags t2 ON t2.id = ft2.tag_id
-			WHERE LOWER(f2.filename) LIKE ? OR LOWER(f2.description) LIKE ? OR LOWER(t2.value) LIKE ?
-			ORDER BY f2.filename
+			WHERE LOWER(f2.filename) LIKE ?
+			   OR LOWER(f2.description) LIKE ?
+			   OR LOWER(t2.value) LIKE ?
+			GROUP BY f2.id
+			ORDER BY f2.id DESC
 			LIMIT ? OFFSET ?
-		)
-		ORDER BY f.filename
+		) matched
+		JOIN files f
+			ON f.id = matched.id
+		LEFT JOIN file_tags ft
+			ON ft.file_id = f.id
+		LEFT JOIN tags t
+			ON t.id = ft.tag_id
+		LEFT JOIN categories c
+			ON c.id = t.category_id
+		ORDER BY f.id DESC, c.name, t.value
 	`, sqlPattern, sqlPattern, sqlPattern, perPage, offset)
 	if err != nil {
 		return nil, 0, err
@@ -131,16 +149,21 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 	defer rows.Close()
 
 	fileMap := make(map[int]*File)
-	var orderedIDs []int
+	files := make([]File, 0, perPage)
+
 	for rows.Next() {
-		var id int
-		var filename, path, description, category, tag sql.NullString
+		var (
+			id                                   int
+			filename, path, description          sql.NullString
+			category, tag                        sql.NullString
+		)
+
 		if err := rows.Scan(&id, &filename, &path, &description, &category, &tag); err != nil {
 			return nil, 0, err
 		}
 		f, exists := fileMap[id]
 		if !exists {
-			f = &File{
+			file := File{
 				ID:              id,
 				Filename:        filename.String,
 				Path:            path.String,
@@ -148,8 +171,9 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 				Description:     description.String,
 				Tags:            make(map[string][]string),
 			}
+			files = append(files, file)
+			f = &files[len(files)-1]
 			fileMap[id] = f
-			orderedIDs = append(orderedIDs, id)
 		}
 		if category.Valid && tag.Valid && tag.String != "" {
 			f.Tags[category.String] = append(f.Tags[category.String], tag.String)
@@ -159,10 +183,6 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 		return nil, 0, err
 	}
 
-	files := make([]File, 0, len(orderedIDs))
-	for _, id := range orderedIDs {
-		files = append(files, *fileMap[id])
-	}
 	return files, total, nil
 }
 
