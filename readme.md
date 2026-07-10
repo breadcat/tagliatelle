@@ -39,6 +39,7 @@ Then access the server via a web browser, the default port is 8080.
 * Database backup and vacuum support
 * `tag=!`, `tag=!123` and `tag=x,value=!` for duplicating previously applied tags
 * Chainable `/and/tag/tag2/value2` filter matching
+* `Ctrl+Enter` to open search results in a new tab
 
 ## Limitations
 * SQLite requires cgo, which requires gcc. Build/run with `CGO_ENABLED=1`

@@ -48,10 +48,11 @@
 </ul>
 
 <div id="search-container">
-  <form onsubmit="event.preventDefault(); window.location.href='/search/' + encodeURIComponent(this.q.value);">
+  <form id="search-form">
     <input type="text" name="q" value="{{.Query}}" placeholder="Search...">
   </form>
 </div>
+<script src="/static/search-box.js" defer></script>
 </nav>
 
 
