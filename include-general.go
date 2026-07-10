@@ -19,17 +19,18 @@ type ListData struct {
 }
 
 type PageData struct {
-	Title       string
-	Data        interface{}
-	Query       string
-	IP          string
-	Port        string
-	Files       []File
-	Tags        map[string][]TagDisplay
-	Properties  map[string][]PropertyDisplay
-	Breadcrumbs []Breadcrumb
-	Pagination  *Pagination
-	GallerySize string
+	Title          string
+	Data           interface{}
+	Query          string
+	IP             string
+	Port           string
+	Files          []File
+	Tags           map[string][]TagDisplay
+	Properties     map[string][]PropertyDisplay
+	Breadcrumbs    []Breadcrumb
+	Pagination     *Pagination
+	GallerySize    string
+	UntaggedCount  int
 }
 
 type File struct {
@@ -95,11 +96,12 @@ func buildPageData(title string, data interface{}) PageData {
 		log.Printf("Warning: buildPageData: failed to load property nav for page %q: %v", title, err)
 	}
 	return PageData{
-		Title:       title,
-		Data:        data,
-		Tags:        tagMap,
-		Properties:  propMap,
-		GallerySize: config.GallerySize,
+		Title:            title,
+		Data:             data,
+		Tags:             tagMap,
+		Properties:       propMap,
+		GallerySize:      config.GallerySize,
+		UntaggedCount: getUntaggedCount(),
 	}
 }
 
@@ -137,4 +139,21 @@ func tagsHandler(w http.ResponseWriter, r *http.Request) {
 	pageData := buildPageData("All Tags", nil)
 	pageData.Data = pageData.Tags
 	renderTemplate(w, "tags.html", pageData)
+}
+
+func getUntaggedCount() int {
+	var count int
+
+	err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM files f
+		LEFT JOIN file_tags ft ON ft.file_id = f.id
+		WHERE ft.file_id IS NULL
+	`).Scan(&count)
+
+	if err != nil {
+		log.Printf("Warning: getUntaggedCount: %v", err)
+		return 0
+	}
+	return count
 }
