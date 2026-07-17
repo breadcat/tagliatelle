@@ -36,6 +36,7 @@ function makeTimestampsClickable(containerId, videoId, imageId) {
       if (video) {
         video.currentTime = time;
         video.play();
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } else if (e.target.classList.contains("rotate")) {
       e.preventDefault();
