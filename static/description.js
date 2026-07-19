@@ -85,6 +85,80 @@ function convertFileRefs() {
   processTextNodes(el);
 }
 
+// Re-init clickable links after submit
+function reinitDescriptionEnhancements() {
+  const hasCurrentDescription = !!document.getElementById('current-description');
+
+  if (hasCurrentDescription && typeof makeTimestampsClickable === 'function') {
+    makeTimestampsClickable('current-description', 'videoPlayer', 'imageViewer');
+  }
+
+  if (hasCurrentDescription && typeof makeLineNumbersClickable === 'function') {
+    makeLineNumbersClickable('current-description', 'text-viewer');
+  }
+
+  convertFileRefs();
+}
+
+// AJAX-submit instead of usual reload
+function initDescriptionForm() {
+  const editDiv = document.getElementById('description-edit');
+  if (!editDiv) return;
+
+  const form = editDiv.querySelector('form');
+  if (!form || form.dataset.ajaxBound) return; // avoid double-binding
+  form.dataset.ajaxBound = 'true';
+  form.addEventListener('submit', handleDescriptionSubmit);
+}
+
+async function handleDescriptionSubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+  if (submitButton) submitButton.disabled = true;
+
+  const action = form.getAttribute('action') || window.location.pathname;
+
+  try {
+    const response = await fetch(action, {
+      method: 'POST',
+      body: new FormData(form),
+    });
+
+    if (!response.ok) {
+      throw new Error('Request failed with status ' + response.status);
+    }
+
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+    const newDisplay = doc.getElementById('description-display');
+    const currentDisplay = document.getElementById('description-display');
+    if (newDisplay && currentDisplay) {
+      currentDisplay.innerHTML = newDisplay.innerHTML;
+      currentDisplay.dataset.originalDescription = newDisplay.dataset.originalDescription || '';
+    }
+
+    const newTextarea = doc.getElementById('description-textarea');
+    const currentTextarea = document.getElementById('description-textarea');
+    if (newTextarea && currentTextarea) {
+      currentTextarea.value = newTextarea.value;
+    }
+
+    document.getElementById('description-display').style.display = 'block';
+    document.getElementById('description-edit').style.display = 'none';
+
+    // Re-run scripts against new description
+    reinitDescriptionEnhancements();
+  } catch (err) {
+    console.error('Description update failed:', err);
+    alert('Failed to save description. Please try again.');
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
+}
+
 document.addEventListener("DOMContentLoaded", function() {
   convertFileRefs();
+  initDescriptionForm();
 });
