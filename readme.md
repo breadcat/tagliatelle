@@ -46,6 +46,10 @@ Then access the server via a web browser, the default port is 8080.
 * SQLite requires cgo, which requires gcc. Build/run with `CGO_ENABLED=1`
 * Database deletions get reserved so you won't have sequential file ID's
 
+## Future plans
+* Detect `mpegts` videos and repair them.
+* Implement [jdupes](https://codeberg.org/jbruchon/jdupes) and [czkawka](https://github.com/qarmin/czkawka) duplicate reporting.
+
 ## Credits
 * [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3) for the go SQLite3 library
 * [Fluent UI System Icons](https://icones.js.org/collection/fluent) for SVG icons used
