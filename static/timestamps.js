@@ -79,12 +79,6 @@ function makeTimestampsClickable(containerId, videoId, imageId) {
 function applyRotation(element, angle) {
   element.style.transform = `rotate(${angle}deg)`;
   element.style.transformOrigin = "center center";
-
-  if (angle === 90 || angle === 270) {
-    element.style.maxWidth = "none";
-  } else {
-    element.style.maxWidth = "100%";
-  }
 }
 
 // Run it
