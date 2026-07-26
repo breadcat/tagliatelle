@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"database/sql"
@@ -14,7 +14,7 @@ import (
 
 func getPreviousTagValue(category string, excludeFileID int) (string, error) {
 	var value string
-	err := db.QueryRow(`
+	err := DB.QueryRow(`
 		SELECT t.value
 		FROM tags t
 		JOIN categories c ON c.id = t.category_id
@@ -36,7 +36,7 @@ func getPreviousTagValue(category string, excludeFileID int) (string, error) {
 }
 
 func getPreviousFileTags(excludeFileID int) ([]struct{ cat, val string }, error) {
-	rows, err := db.Query(`
+	rows, err := DB.Query(`
 		SELECT c.name, t.value
 		FROM tags t
 		JOIN categories c ON c.id = t.category_id
@@ -68,7 +68,7 @@ func getPreviousFileTags(excludeFileID int) ([]struct{ cat, val string }, error)
 }
 
 func getFileTagsByID(fileID int) ([]struct{ cat, val string }, error) {
-	rows, err := db.Query(`
+	rows, err := DB.Query(`
 		SELECT c.name, t.value
 		FROM tags t
 		JOIN categories c ON c.id = t.category_id
@@ -101,7 +101,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var f File
-	err := db.QueryRow("SELECT id, filename, path, COALESCE(description, '') as description FROM files WHERE id=?", idStr).Scan(&f.ID, &f.Filename, &f.Path, &f.Description)
+	err := DB.QueryRow("SELECT id, filename, path, COALESCE(description, '') as description FROM files WHERE id=?", idStr).Scan(&f.ID, &f.Filename, &f.Path, &f.Description)
 	if err != nil {
 		log.Printf("Error: fileHandler: file not found for id=%s: %v", idStr, err)
 		renderError(w, "File not found", http.StatusNotFound)
@@ -109,7 +109,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	f.Tags = make(map[string][]string)
-	rows, err := db.Query(`
+	rows, err := DB.Query(`
 		SELECT c.name, t.value
 		FROM tags t
 		JOIN categories c ON c.id = t.category_id
@@ -136,7 +136,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 				description = description[:2048]
 			}
 
-			if _, err := db.Exec("UPDATE files SET description = ? WHERE id = ?", description, f.ID); err != nil {
+			if _, err := DB.Exec("UPDATE files SET description = ? WHERE id = ?", description, f.ID); err != nil {
 				log.Printf("Error: fileHandler: failed to update description for file id=%d: %v", f.ID, err)
 				renderError(w, "Failed to update description", http.StatusInternalServerError)
 				return
@@ -183,7 +183,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 					log.Printf("Error: fileHandler: failed to create tag %s:%s while copying from %s for file id=%d: %v", tag.cat, tag.val, sourceDesc, f.ID, err)
 					continue
 				}
-				if _, err = db.Exec("INSERT OR IGNORE INTO file_tags(file_id, tag_id) VALUES (?, ?)", f.ID, tagID); err != nil {
+				if _, err = DB.Exec("INSERT OR IGNORE INTO file_tags(file_id, tag_id) VALUES (?, ?)", f.ID, tagID); err != nil {
 					log.Printf("Error: fileHandler: failed to add tag %s:%s to file id=%d: %v", tag.cat, tag.val, f.ID, err)
 				}
 			}
@@ -212,7 +212,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 			return
 		}
-		if _, err = db.Exec("INSERT OR IGNORE INTO file_tags(file_id, tag_id) VALUES (?, ?)", f.ID, tagID); err != nil {
+		if _, err = DB.Exec("INSERT OR IGNORE INTO file_tags(file_id, tag_id) VALUES (?, ?)", f.ID, tagID); err != nil {
 			log.Printf("Error: fileHandler: failed to add tag %s:%s to file id=%d: %v", cat, val, f.ID, err)
 			http.Redirect(w, r, "/file/"+idStr, http.StatusSeeOther)
 			return
@@ -221,7 +221,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	catRows, err := db.Query(`
+	catRows, err := DB.Query(`
 		SELECT DISTINCT c.name
 		FROM categories c
 		JOIN tags t ON t.category_id = c.id
@@ -244,7 +244,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		catRows.Close()
 	}
 
-	propRows, err := db.Query(`
+	propRows, err := DB.Query(`
 		SELECT key, value FROM file_properties
 		WHERE file_id = ?
 		ORDER BY key, value
@@ -282,7 +282,7 @@ func buildPageDataWithIP(title string, data interface{}) PageData {
 		log.Printf("Warning: buildPageDataWithIP: could not determine local IP: %v", err)
 	}
 	pageData.IP = ip
-	pageData.Port = strings.TrimPrefix(config.ServerPort, ":")
+	pageData.Port = strings.TrimPrefix(Cfg.ServerPort, ":")
 	return pageData
 }
 
@@ -314,7 +314,7 @@ func tagActionHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 
 	if cat != "" && val != "" {
 		var tagID int
-		if err := db.QueryRow(`
+		if err := DB.QueryRow(`
 			SELECT t.id
 			FROM tags t
 			JOIN categories c ON c.id=t.category_id
@@ -322,7 +322,7 @@ func tagActionHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 			log.Printf("Warning: tagActionHandler: failed to look up tag %s:%s for file id=%s: %v", cat, val, fileID, err)
 		}
 		if tagID != 0 {
-			if _, err := db.Exec("DELETE FROM file_tags WHERE file_id=? AND tag_id=?", fileID, tagID); err != nil {
+			if _, err := DB.Exec("DELETE FROM file_tags WHERE file_id=? AND tag_id=?", fileID, tagID); err != nil {
 				log.Printf("Error: tagActionHandler: failed to delete file_tag for file id=%s tag id=%d: %v", fileID, tagID, err)
 			}
 		}
@@ -334,9 +334,9 @@ func getOrCreateCategoryAndTag(category, value string) (int, int, error) {
 	category = strings.TrimSpace(category)
 	value = strings.TrimSpace(value)
 	var catID int
-	err := db.QueryRow("SELECT id FROM categories WHERE name=?", category).Scan(&catID)
+	err := DB.QueryRow("SELECT id FROM categories WHERE name=?", category).Scan(&catID)
 	if err == sql.ErrNoRows {
-		res, err := db.Exec("INSERT INTO categories(name) VALUES(?)", category)
+		res, err := DB.Exec("INSERT INTO categories(name) VALUES(?)", category)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -348,9 +348,9 @@ func getOrCreateCategoryAndTag(category, value string) (int, int, error) {
 
 	var tagID int
 	if value != "" {
-		err = db.QueryRow("SELECT id FROM tags WHERE category_id=? AND value=?", catID, value).Scan(&tagID)
+		err = DB.QueryRow("SELECT id FROM tags WHERE category_id=? AND value=?", catID, value).Scan(&tagID)
 		if err == sql.ErrNoRows {
-			res, err := db.Exec("INSERT INTO tags(category_id, value) VALUES(?, ?)", catID, value)
+			res, err := DB.Exec("INSERT INTO tags(category_id, value) VALUES(?, ?)", catID, value)
 			if err != nil {
 				return 0, 0, err
 			}

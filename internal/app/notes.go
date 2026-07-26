@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"database/sql"
@@ -27,9 +27,9 @@ type Note struct {
 }
 
 // GetNotes retrieves the notes content from database
-func GetNotes(db *sql.DB) (string, error) {
+func GetNotes(DB *sql.DB) (string, error) {
 	var content string
-	err := db.QueryRow("SELECT content FROM notes WHERE id = 1").Scan(&content)
+	err := DB.QueryRow("SELECT content FROM notes WHERE id = 1").Scan(&content)
 	if err == sql.ErrNoRows {
 		return "", nil
 	}
@@ -37,11 +37,11 @@ func GetNotes(db *sql.DB) (string, error) {
 }
 
 // SaveNotes saves the notes content to database with sorting and deduplication
-func SaveNotes(db *sql.DB, content string) error {
+func SaveNotes(DB *sql.DB, content string) error {
 	// Process: deduplicate and sort
 	processed := ProcessNotes(content)
 
-	_, err := db.Exec(`
+	_, err := DB.Exec(`
 		INSERT INTO notes (id, content, updated_at)
 		VALUES (1, ?, datetime('now'))
 		ON CONFLICT(id) DO UPDATE SET
@@ -210,7 +210,7 @@ func analyzeNotes(content string) notesAnalysis {
 
 // notesViewHandler displays the notes editor page
 func notesViewHandler(w http.ResponseWriter, r *http.Request) {
-	content, err := GetNotes(db)
+	content, err := GetNotes(DB)
 	if err != nil {
 		log.Printf("Error: notesViewHandler: failed to load notes: %v", err)
 		http.Error(w, "Failed to load notes", http.StatusInternalServerError)
@@ -228,12 +228,12 @@ func notesViewHandler(w http.ResponseWriter, r *http.Request) {
 		Content:    content,
 		Stats:      analysis.Stats,
 		Categories: analysis.Categories,
-		SedRules:   config.SedRules,
+		SedRules:   Cfg.SedRules,
 	}
 
 	pageData := buildPageData("Notes", notesData)
 
-	if err := tmpl.ExecuteTemplate(w, "notes.html", pageData); err != nil {
+	if err := Tmpl.ExecuteTemplate(w, "notes.html", pageData); err != nil {
 		log.Printf("Error: notesViewHandler: template error: %v", err)
 		http.Error(w, "Template error", http.StatusInternalServerError)
 	}
@@ -249,7 +249,7 @@ func notesSaveHandler(w http.ResponseWriter, r *http.Request) {
 	content := r.FormValue("content")
 
 	// Process (deduplicate and sort) before saving
-	if err := SaveNotes(db, content); err != nil {
+	if err := SaveNotes(DB, content); err != nil {
 		log.Printf("Error: notesSaveHandler: failed to save notes: %v", err)
 		http.Error(w, "Failed to save notes", http.StatusInternalServerError)
 		return
@@ -265,7 +265,7 @@ func notesSaveHandler(w http.ResponseWriter, r *http.Request) {
 
 // notesFilterHandler filters notes by search term or category
 func notesFilterHandler(w http.ResponseWriter, r *http.Request) {
-	content, err := GetNotes(db)
+	content, err := GetNotes(DB)
 	if err != nil {
 		log.Printf("Error: notesFilterHandler: failed to load notes: %v", err)
 		http.Error(w, "Failed to load notes", http.StatusInternalServerError)
@@ -291,7 +291,7 @@ func notesFilterHandler(w http.ResponseWriter, r *http.Request) {
 
 // notesStatsHandler returns statistics about the notes
 func notesStatsHandler(w http.ResponseWriter, r *http.Request) {
-	content, err := GetNotes(db)
+	content, err := GetNotes(DB)
 	if err != nil {
 		log.Printf("Error: notesStatsHandler: failed to load notes: %v", err)
 		http.Error(w, "Failed to load notes", http.StatusInternalServerError)
@@ -324,8 +324,8 @@ func notesApplySedHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Info: notesApplySedHandler: content length=%d, rule_index=%s", len(content), ruleIndexStr)
 
 	ruleIndex, err := strconv.Atoi(ruleIndexStr)
-	if err != nil || ruleIndex < 0 || ruleIndex >= len(config.SedRules) {
-		log.Printf("Warning: notesApplySedHandler: invalid rule index: %s (error: %v, len(rules)=%d)", ruleIndexStr, err, len(config.SedRules))
+	if err != nil || ruleIndex < 0 || ruleIndex >= len(Cfg.SedRules) {
+		log.Printf("Warning: notesApplySedHandler: invalid rule index: %s (error: %v, len(rules)=%d)", ruleIndexStr, err, len(Cfg.SedRules))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]interface{}{
@@ -335,7 +335,7 @@ func notesApplySedHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rule := config.SedRules[ruleIndex]
+	rule := Cfg.SedRules[ruleIndex]
 	log.Printf("Info: notesApplySedHandler: applying rule: %s (command: %s)", rule.Name, rule.Command)
 	result, err := ApplySedRule(content, rule.Command)
 	if err != nil {
@@ -384,7 +384,7 @@ func notesPreviewHandler(w http.ResponseWriter, r *http.Request) {
 
 // notesExportHandler exports notes as plain text file
 func notesExportHandler(w http.ResponseWriter, r *http.Request) {
-	content, err := GetNotes(db)
+	content, err := GetNotes(DB)
 	if err != nil {
 		log.Printf("Error: notesExportHandler: failed to load notes: %v", err)
 		http.Error(w, "Failed to load notes", http.StatusInternalServerError)
@@ -426,7 +426,7 @@ func notesImportHandler(w http.ResponseWriter, r *http.Request) {
 
 	if mergeMode {
 		// Merge with existing content
-		existingContent, err := GetNotes(db)
+		existingContent, err := GetNotes(DB)
 		if err != nil {
 			log.Printf("Warning: notesImportHandler: failed to load existing notes for merge: %v", err)
 		}
@@ -434,7 +434,7 @@ func notesImportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save (will auto-process)
-	if err := SaveNotes(db, content); err != nil {
+	if err := SaveNotes(DB, content); err != nil {
 		log.Printf("Error: notesImportHandler: failed to save imported notes: %v", err)
 		http.Error(w, "Failed to save notes", http.StatusInternalServerError)
 		return

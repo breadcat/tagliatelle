@@ -1,20 +1,14 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-)
 
-var (
-	db     *sql.DB
-	tmpl   *template.Template
-	config Config
+	"tagliatelle/internal/app"
 )
 
 func main() {
@@ -36,38 +30,38 @@ func main() {
 
 	// Initialize database
 	var err error
-	db, err = InitDatabase(dbPath)
+	app.DB, err = app.InitDatabase(dbPath)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
-	defer db.Close()
+	defer app.DB.Close()
 
 	// Load config from database (gallery size, items per page, aliases, sed rules)
-	config, err = LoadConfig(db)
+	app.Cfg, err = app.LoadConfig(app.DB)
 	if err != nil {
 		log.Fatalf("Failed to load config from database: %v", err)
 	}
 
 	// Inject runtime values (not stored in DB)
-	config.DatabasePath = dbPath
-	config.UploadDir = uploadDir
-	config.ServerPort = serverPort
+	app.Cfg.DatabasePath = dbPath
+	app.Cfg.UploadDir = uploadDir
+	app.Cfg.ServerPort = serverPort
 
 	// Initialize templates
-	tmpl, err = InitTemplates()
+	app.Tmpl, err = app.InitTemplates()
 	if err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
 
 	// Register all routes
-	RegisterRoutes()
+	app.RegisterRoutes()
 
 	// Start server
-	log.Printf("Server started at http://localhost%s", config.ServerPort)
-	log.Printf("Database: %s", config.DatabasePath)
-	log.Printf("Upload directory: %s", config.UploadDir)
-	
-	if err := http.ListenAndServe(config.ServerPort, nil); err != nil {
+	log.Printf("Server started at http://localhost%s", app.Cfg.ServerPort)
+	log.Printf("Database: %s", app.Cfg.DatabasePath)
+	log.Printf("Upload directory: %s", app.Cfg.UploadDir)
+
+	if err := http.ListenAndServe(app.Cfg.ServerPort, nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }

@@ -1,13 +1,13 @@
-package main
+package app
 
 import (
-    "fmt"
-    "log"
-    "net/http"
-    "os"
-    "path/filepath"
-    "strconv"
-    "strings"
+	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 func fileRouter(w http.ResponseWriter, r *http.Request) {
@@ -40,14 +40,14 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 	fileID := parts[2]
 
 	var currentFile File
-	err := db.QueryRow("SELECT id, filename, path FROM files WHERE id=?", fileID).Scan(&currentFile.ID, &currentFile.Filename, &currentFile.Path)
+	err := DB.QueryRow("SELECT id, filename, path FROM files WHERE id=?", fileID).Scan(&currentFile.ID, &currentFile.Filename, &currentFile.Path)
 	if err != nil {
 		log.Printf("Error: fileDeleteHandler: file not found for id=%s: %v", fileID, err)
 		renderError(w, "File not found", http.StatusNotFound)
 		return
 	}
 
-	tx, err := db.Begin()
+	tx, err := DB.Begin()
 	if err != nil {
 		log.Printf("Error: fileDeleteHandler: failed to start transaction for file id=%s: %v", fileID, err)
 		renderError(w, "Failed to start transaction", http.StatusInternalServerError)
@@ -79,13 +79,13 @@ func fileDeleteHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		return
 	}
 
-	absPath := filepath.Join(config.UploadDir, currentFile.Path)
+	absPath := filepath.Join(Cfg.UploadDir, currentFile.Path)
 	if err = os.Remove(absPath); err != nil {
 		log.Printf("Warning: fileDeleteHandler: failed to delete physical file %s: %v", absPath, err)
 	}
 
 	// Delete thumbnail if it exists
-	thumbPath := filepath.Join(config.UploadDir, "thumbnails", currentFile.Filename+".jpg")
+	thumbPath := filepath.Join(Cfg.UploadDir, "thumbnails", currentFile.Filename+".jpg")
 	if _, err := os.Stat(thumbPath); err == nil {
 		if err := os.Remove(thumbPath); err != nil {
 			log.Printf("Warning: fileDeleteHandler: failed to delete thumbnail %s: %v", thumbPath, err)
@@ -110,7 +110,7 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 	}
 
 	var currentFilename, currentRelPath string
-	err := db.QueryRow("SELECT filename, path FROM files WHERE id=?", fileID).Scan(&currentFilename, &currentRelPath)
+	err := DB.QueryRow("SELECT filename, path FROM files WHERE id=?", fileID).Scan(&currentFilename, &currentRelPath)
 	if err != nil {
 		log.Printf("Error: fileRenameHandler: file not found for id=%s: %v", fileID, err)
 		renderError(w, "File not found", http.StatusNotFound)
@@ -122,8 +122,8 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		return
 	}
 
-	currentAbsPath := filepath.Join(config.UploadDir, currentRelPath)
-	newPath := filepath.Join(config.UploadDir, newFilename)
+	currentAbsPath := filepath.Join(Cfg.UploadDir, currentRelPath)
+	newPath := filepath.Join(Cfg.UploadDir, newFilename)
 	if _, err := os.Stat(newPath); !os.IsNotExist(err) {
 		renderError(w, "A file with that name already exists", http.StatusConflict)
 		return
@@ -135,8 +135,8 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		return
 	}
 
-	thumbOld := filepath.Join(config.UploadDir, "thumbnails", currentFilename+".jpg")
-	thumbNew := filepath.Join(config.UploadDir, "thumbnails", newFilename+".jpg")
+	thumbOld := filepath.Join(Cfg.UploadDir, "thumbnails", currentFilename+".jpg")
+	thumbNew := filepath.Join(Cfg.UploadDir, "thumbnails", newFilename+".jpg")
 
 	if _, err := os.Stat(thumbOld); err == nil {
 		if err := os.Rename(thumbOld, thumbNew); err != nil {
@@ -149,13 +149,13 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 		}
 	}
 
-	newRelPath, err := filepath.Rel(config.UploadDir, newPath)
+	newRelPath, err := filepath.Rel(Cfg.UploadDir, newPath)
 	if err != nil {
 		log.Printf("Error: fileRenameHandler: failed to compute relative path for %s: %v", newPath, err)
 		newRelPath = newFilename
 	}
 
-	_, err = db.Exec("UPDATE files SET filename=?, path=? WHERE id=?", newFilename, newRelPath, fileID)
+	_, err = DB.Exec("UPDATE files SET filename=?, path=? WHERE id=?", newFilename, newRelPath, fileID)
 	if err != nil {
 		log.Printf("Error: fileRenameHandler: failed to update database for file id=%s: %v", fileID, err)
 		if renameErr := os.Rename(newPath, currentAbsPath); renameErr != nil {
@@ -171,7 +171,7 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 	}
 
 	// Recompute properties in case the extension changed
-	if _, err := db.Exec("DELETE FROM file_properties WHERE file_id = ?", fileID); err != nil {
+	if _, err := DB.Exec("DELETE FROM file_properties WHERE file_id = ?", fileID); err != nil {
 		log.Printf("Warning: fileRenameHandler: failed to delete old properties for file id=%s: %v", fileID, err)
 	}
 	if id, err := strconv.ParseInt(fileID, 10, 64); err == nil {
@@ -184,7 +184,7 @@ func fileRenameHandler(w http.ResponseWriter, r *http.Request, parts []string) {
 }
 
 func checkFileConflictStrict(filename string) (string, string, int64, error) {
-	finalPath := filepath.Join(config.UploadDir, filename)
+	finalPath := filepath.Join(Cfg.UploadDir, filename)
 	if _, err := os.Stat(finalPath); err == nil {
 		existingID, dbErr := getFileIDByName(filename)
 		if dbErr != nil {
@@ -200,6 +200,6 @@ func checkFileConflictStrict(filename string) (string, string, int64, error) {
 
 func getFileIDByName(filename string) (int64, error) {
 	var id int64
-	err := db.QueryRow("SELECT id FROM files WHERE filename = ?", filename).Scan(&id)
+	err := DB.QueryRow("SELECT id FROM files WHERE filename = ?", filename).Scan(&id)
 	return id, err
 }

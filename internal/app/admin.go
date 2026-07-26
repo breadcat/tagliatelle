@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func renderAdminPage(w http.ResponseWriter, r *http.Request, data AdminPageData)
 }
 
 func getRecentFiles() []File {
-	rows, err := db.Query("SELECT id, filename FROM files ORDER BY id DESC LIMIT 20")
+	rows, err := DB.Query("SELECT id, filename FROM files ORDER BY id DESC LIMIT 20")
 	if err != nil {
 		log.Printf("Warning: getRecentFiles: failed to query recent files: %v", err)
 		return nil
@@ -54,7 +54,7 @@ func getRecentFiles() []File {
 
 func currentAdminState(r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) AdminPageData {
 	return AdminPageData{
-		Config:            config,
+		Config:            Cfg,
 		OrphanData:        orphanData,
 		ActiveTab:         r.FormValue("active_tab"),
 		MissingThumbnails: missingThumbnails,
@@ -74,7 +74,7 @@ func validateConfig(newConfig Config) error {
 
 func adminHandler(w http.ResponseWriter, r *http.Request) {
 	// Get orphaned files
-	orphanData, err := getOrphanedFiles(config.UploadDir)
+	orphanData, err := getOrphanedFiles(Cfg.UploadDir)
 	if err != nil {
 		log.Printf("Warning: adminHandler: failed to get orphaned files: %v", err)
 	}
@@ -92,7 +92,7 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 			handleSaveSettings(w, r, orphanData, missingThumbnails)
 
 		case "backup":
-			err := backupDatabase(config.DatabasePath)
+			err := backupDatabase(Cfg.DatabasePath)
 			if err != nil {
 				log.Printf("Error: adminHandler: database backup failed: %v", err)
 			}
@@ -171,9 +171,9 @@ func parseSedRulesFromForm(r *http.Request) ([]SedRule, error) {
 }
 
 func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
-	config.TagAliases = parseAliasesFromForm(r)
+	Cfg.TagAliases = parseAliasesFromForm(r)
 
-	if err := SaveConfig(db, config); err != nil {
+	if err := SaveConfig(DB, Cfg); err != nil {
 		log.Printf("Error: handleSaveAliases: failed to save configuration: %v", err)
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
@@ -187,7 +187,7 @@ func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData Orphan
 }
 
 func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
-	newConfig := config // preserve runtime fields
+	newConfig := Cfg // preserve runtime fields
 	newConfig.GallerySize = strings.TrimSpace(r.FormValue("gallery_size"))
 	newConfig.ItemsPerPage = strings.TrimSpace(r.FormValue("items_per_page"))
 
@@ -198,9 +198,9 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData Orpha
 		return
 	}
 
-	config = newConfig
+	Cfg = newConfig
 
-	if err := SaveConfig(db, config); err != nil {
+	if err := SaveConfig(DB, Cfg); err != nil {
 		log.Printf("Error: handleSaveSettings: failed to save configuration: %v", err)
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
@@ -222,9 +222,9 @@ func handleSaveSedRules(w http.ResponseWriter, r *http.Request, orphanData Orpha
 		return
 	}
 
-	config.SedRules = rules
+	Cfg.SedRules = rules
 
-	if err := SaveConfig(db, config); err != nil {
+	if err := SaveConfig(DB, Cfg); err != nil {
 		log.Printf("Error: handleSaveSedRules: failed to save configuration: %v", err)
 		data := currentAdminState(r, orphanData, missingThumbnails)
 		data.Error = "Failed to save configuration: " + err.Error()
@@ -249,7 +249,7 @@ func backupDatabase(dbPath string) error {
 
 	dbName := strings.TrimSuffix(filepath.Base(dbPath), filepath.Ext(dbPath))
 	timestamp := time.Now().Format("20060102_150405")
-	backupPath := filepath.Join(backupDir, fmt.Sprintf("%s_backup_%s.db", dbName, timestamp))
+	backupPath := filepath.Join(backupDir, fmt.Sprintf("%s_backup_%s.DB", dbName, timestamp))
 
 	input, err := os.Open(dbPath)
 	if err != nil {
@@ -272,7 +272,7 @@ func backupDatabase(dbPath string) error {
 }
 
 func vacuumDatabase() error {
-	if _, err := db.Exec("VACUUM;"); err != nil {
+	if _, err := DB.Exec("VACUUM;"); err != nil {
 		return fmt.Errorf("VACUUM failed: %w", err)
 	}
 
@@ -281,7 +281,7 @@ func vacuumDatabase() error {
 }
 
 func getFilesInDB() (map[string]bool, error) {
-	rows, err := db.Query("SELECT filename FROM files")
+	rows, err := DB.Query("SELECT filename FROM files")
 	if err != nil {
 		return nil, err
 	}

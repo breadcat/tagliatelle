@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"database/sql"
@@ -26,21 +26,21 @@ type TagAliasGroup struct {
 
 // InitDatabase opens the database connection and creates tables if needed
 func InitDatabase(dbPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dbPath+"?_busy_timeout=5000")
+	DB, err := sql.Open("sqlite3", dbPath+"?_busy_timeout=5000")
 	if err != nil {
 		return nil, err
 	}
 
-	if err := createTables(db); err != nil {
-		db.Close()
+	if err := createTables(DB); err != nil {
+		DB.Close()
 		return nil, err
 	}
 
-	return db, nil
+	return DB, nil
 }
 
 // createTables creates all necessary database tables
-func createTables(db *sql.DB) error {
+func createTables(DB *sql.DB) error {
 	schema := `
 	CREATE TABLE IF NOT EXISTS files (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,11 +91,11 @@ func createTables(db *sql.DB) error {
 	);
 	`
 
-	_, err := db.Exec(schema)
+	_, err := DB.Exec(schema)
 	return err
 }
 
-func LoadConfig(db *sql.DB) (Config, error) {
+func LoadConfig(DB *sql.DB) (Config, error) {
 	cfg := Config{
 		GallerySize:  "400px",
 		ItemsPerPage: "100",
@@ -103,7 +103,7 @@ func LoadConfig(db *sql.DB) (Config, error) {
 		SedRules:     []SedRule{},
 	}
 
-	rows, err := db.Query(`SELECT key, value FROM settings`)
+	rows, err := DB.Query(`SELECT key, value FROM settings`)
 	if err != nil {
 		return cfg, err
 	}
@@ -128,7 +128,7 @@ func LoadConfig(db *sql.DB) (Config, error) {
 		return cfg, err
 	}
 
-	aliasRows, err := db.Query(`SELECT category, aliases FROM tag_aliases ORDER BY id`)
+	aliasRows, err := DB.Query(`SELECT category, aliases FROM tag_aliases ORDER BY id`)
 	if err != nil {
 		return cfg, err
 	}
@@ -147,7 +147,7 @@ func LoadConfig(db *sql.DB) (Config, error) {
 		return cfg, err
 	}
 
-	sedRows, err := db.Query(`SELECT name, description, command FROM sed_rules ORDER BY id`)
+	sedRows, err := DB.Query(`SELECT name, description, command FROM sed_rules ORDER BY id`)
 	if err != nil {
 		return cfg, err
 	}
@@ -166,8 +166,8 @@ func LoadConfig(db *sql.DB) (Config, error) {
 	return cfg, nil
 }
 
-func SaveConfig(db *sql.DB, cfg Config) error {
-	tx, err := db.Begin()
+func SaveConfig(DB *sql.DB, cfg Config) error {
+	tx, err := DB.Begin()
 	if err != nil {
 		return err
 	}

@@ -1,10 +1,10 @@
-package main
+package app
 
 import (
-    "log"
-    "net/http"
-    "net/url"
-    "strings"
+	"log"
+	"net/http"
+	"net/url"
+	"strings"
 )
 
 type TagDisplay struct {
@@ -19,18 +19,18 @@ type ListData struct {
 }
 
 type PageData struct {
-	Title          string
-	Data           interface{}
-	Query          string
-	IP             string
-	Port           string
-	Files          []File
-	Tags           map[string][]TagDisplay
-	Properties     map[string][]PropertyDisplay
-	Breadcrumbs    []Breadcrumb
-	Pagination     *Pagination
-	GallerySize    string
-	UntaggedCount  int
+	Title         string
+	Data          interface{}
+	Query         string
+	IP            string
+	Port          string
+	Files         []File
+	Tags          map[string][]TagDisplay
+	Properties    map[string][]PropertyDisplay
+	Breadcrumbs   []Breadcrumb
+	Pagination    *Pagination
+	GallerySize   string
+	UntaggedCount int
 }
 
 type File struct {
@@ -58,7 +58,7 @@ func renderError(w http.ResponseWriter, message string, statusCode int) {
 }
 
 func renderTemplate(w http.ResponseWriter, tmplName string, data PageData) {
-	if err := tmpl.ExecuteTemplate(w, tmplName, data); err != nil {
+	if err := Tmpl.ExecuteTemplate(w, tmplName, data); err != nil {
 		log.Printf("Error: renderTemplate: failed to execute template %s: %v", tmplName, err)
 		renderError(w, "Template rendering failed", http.StatusInternalServerError)
 	}
@@ -96,17 +96,17 @@ func buildPageData(title string, data interface{}) PageData {
 		log.Printf("Warning: buildPageData: failed to load property nav for page %q: %v", title, err)
 	}
 	return PageData{
-		Title:            title,
-		Data:             data,
-		Tags:             tagMap,
-		Properties:       propMap,
-		GallerySize:      config.GallerySize,
+		Title:         title,
+		Data:          data,
+		Tags:          tagMap,
+		Properties:    propMap,
+		GallerySize:   Cfg.GallerySize,
 		UntaggedCount: getUntaggedCount(),
 	}
 }
 
 func getTagData() (map[string][]TagDisplay, error) {
-	rows, err := db.Query(`
+	rows, err := DB.Query(`
 		SELECT c.name, t.value, COUNT(ft.file_id)
 		FROM tags t
 		JOIN categories c ON c.id = t.category_id
@@ -144,7 +144,7 @@ func tagsHandler(w http.ResponseWriter, r *http.Request) {
 func getUntaggedCount() int {
 	var count int
 
-	err := db.QueryRow(`
+	err := DB.QueryRow(`
 		SELECT COUNT(*)
 		FROM files f
 		LEFT JOIN file_tags ft ON ft.file_id = f.id

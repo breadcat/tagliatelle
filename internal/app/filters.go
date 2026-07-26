@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"fmt"
@@ -214,7 +214,7 @@ func tagFilterHandler(w http.ResponseWriter, r *http.Request) {
 
 	var total int
 	countArgs := append([]interface{}(nil), whereArgs...) // copy; count query does not need pagination args
-	err = db.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f`+where, countArgs...).Scan(&total)
+	err = DB.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f`+where, countArgs...).Scan(&total)
 	if err != nil {
 		log.Printf("Error: tagFilterHandler: failed to count files: %v", err)
 		renderError(w, "Failed to count files", http.StatusInternalServerError)
@@ -259,7 +259,7 @@ func buildFilterTitle(filters []filter, sep string) string {
 func expandTagWithAliases(category, value string) []string {
 	values := []string{value}
 
-	for _, group := range config.TagAliases {
+	for _, group := range Cfg.TagAliases {
 		if group.Category != category {
 			continue
 		}
@@ -288,7 +288,7 @@ func expandTagWithAliases(category, value string) []string {
 }
 
 func queryFilesWithTags(query string, args ...interface{}) ([]File, error) {
-	rows, err := db.Query(query, args...)
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func setProperty(fileID int64, key, value string) {
 	if value == "" {
 		return
 	}
-	_, err := db.Exec(
+	_, err := DB.Exec(
 		`INSERT OR IGNORE INTO file_properties (file_id, key, value) VALUES (?, ?, ?)`,
 		fileID, key, value,
 	)
@@ -56,7 +56,7 @@ func computeImageProperties(fileID int64, filePath string) {
 
 	cfg, _, err := image.DecodeConfig(f)
 	if err != nil {
-		log.Printf("Warning: could not decode image config %s: %v", filePath, err)
+		log.Printf("Warning: could not decode image Cfg %s: %v", filePath, err)
 		return
 	}
 
@@ -122,43 +122,43 @@ func computeVideoProperties(fileID int64, filePath string) {
 }
 
 func computeMissingProperties() (int, error) {
-    rows, err := db.Query(`
+	rows, err := DB.Query(`
         SELECT f.id, f.path
         FROM files f
         WHERE NOT EXISTS (
             SELECT 1 FROM file_properties fp WHERE fp.file_id = f.id
         )
     `)
-    if err != nil {
-        return 0, fmt.Errorf("failed to query files: %w", err)
-    }
+	if err != nil {
+		return 0, fmt.Errorf("failed to query files: %w", err)
+	}
 
-    type fileRow struct {
-        id   int64
-        path string
-    }
-    var files []fileRow
-    for rows.Next() {
-        var r fileRow
-        if err := rows.Scan(&r.id, &r.path); err != nil {
-            continue
-        }
-        files = append(files, r)
-    }
-    rows.Close()
+	type fileRow struct {
+		id   int64
+		path string
+	}
+	var files []fileRow
+	for rows.Next() {
+		var r fileRow
+		if err := rows.Scan(&r.id, &r.path); err != nil {
+			continue
+		}
+		files = append(files, r)
+	}
+	rows.Close()
 
-    if err := rows.Err(); err != nil {
-        return 0, err
-    }
+	if err := rows.Err(); err != nil {
+		return 0, err
+	}
 
-    for _, f := range files {
-        computeProperties(f.id, f.path)
-    }
-    return len(files), nil
+	for _, f := range files {
+		computeProperties(f.id, f.path)
+	}
+	return len(files), nil
 }
 
 func getPropertyNav() (map[string][]PropertyDisplay, error) {
-	rows, err := db.Query(`
+	rows, err := DB.Query(`
 		SELECT fp.key, fp.value, COUNT(*) as cnt
 		FROM file_properties fp
 		JOIN files f ON f.id = fp.file_id
@@ -200,7 +200,7 @@ func propertyFilterHandler(w http.ResponseWriter, r *http.Request) {
 
 		var total int
 		countArgs := append([]interface{}(nil), whereArgs...)
-		err = db.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f`+where, countArgs...).Scan(&total)
+		err = DB.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f`+where, countArgs...).Scan(&total)
 		if err != nil {
 			log.Printf("Error: propertyFilterHandler: failed to count files: %v", err)
 			renderError(w, "Failed to count files", http.StatusInternalServerError)
@@ -245,7 +245,7 @@ func propertyFilterHandler(w http.ResponseWriter, r *http.Request) {
 	perPage := perPageFromConfig(50)
 
 	var total int
-	err := db.QueryRow(`
+	err := DB.QueryRow(`
 		SELECT COUNT(DISTINCT f.id)
 		FROM files f
 		JOIN file_properties fp ON fp.file_id = f.id

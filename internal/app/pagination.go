@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"database/sql"
@@ -27,7 +27,7 @@ func pageFromRequest(r *http.Request) int {
 }
 
 func perPageFromConfig(fallback int) int {
-	if n, err := strconv.Atoi(config.ItemsPerPage); err == nil && n > 0 {
+	if n, err := strconv.Atoi(Cfg.ItemsPerPage); err == nil && n > 0 {
 		return n
 	}
 	return fallback
@@ -36,7 +36,7 @@ func perPageFromConfig(fallback int) int {
 func getUntaggedFilesPaginated(page, perPage int) ([]File, int, error) {
 	// Get total count
 	var total int
-	err := db.QueryRow(`SELECT COUNT(*) FROM files f LEFT JOIN file_tags ft ON ft.file_id = f.id WHERE ft.file_id IS NULL`).Scan(&total)
+	err := DB.QueryRow(`SELECT COUNT(*) FROM files f LEFT JOIN file_tags ft ON ft.file_id = f.id WHERE ft.file_id IS NULL`).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -95,7 +95,7 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 	sqlPattern := "%" + strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(query), "*", "%"), "?", "_") + "%"
 
 	var total int
-	err := db.QueryRow(`
+	err := DB.QueryRow(`
 		SELECT COUNT(*)
 		FROM (
 			SELECT f.id
@@ -113,7 +113,7 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 	}
 
 	offset := (page - 1) * perPage
-	rows, err := db.Query(`
+	rows, err := DB.Query(`
 		SELECT
 			f.id,
 			f.filename,
@@ -153,9 +153,9 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 
 	for rows.Next() {
 		var (
-			id                                   int
-			filename, path, description          sql.NullString
-			category, tag                        sql.NullString
+			id                          int
+			filename, path, description sql.NullString
+			category, tag               sql.NullString
 		)
 
 		if err := rows.Scan(&id, &filename, &path, &description, &category, &tag); err != nil {
@@ -189,7 +189,7 @@ func getSearchResultsPaginated(query string, page, perPage int) ([]File, int, er
 func getTaggedFilesPaginated(page, perPage int) ([]File, int, error) {
 	// Get total count
 	var total int
-	err := db.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f JOIN file_tags ft ON ft.file_id = f.id`).Scan(&total)
+	err := DB.QueryRow(`SELECT COUNT(DISTINCT f.id) FROM files f JOIN file_tags ft ON ft.file_id = f.id`).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}

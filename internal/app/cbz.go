@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"archive/zip"
@@ -125,10 +125,10 @@ func createCollage(images []image.Image, targetWidth int) image.Image {
 
 	// Positions for the 2x2 grid
 	positions := []image.Point{
-		{0, 0},                    // Top-left
-		{cellSize, 0},             // Top-right
-		{0, cellSize},             // Bottom-left
-		{cellSize, cellSize},      // Bottom-right
+		{0, 0},               // Top-left
+		{cellSize, 0},        // Top-right
+		{0, cellSize},        // Bottom-left
+		{cellSize, cellSize}, // Bottom-right
 	}
 
 	// Draw each image
@@ -287,7 +287,7 @@ func cbzViewerHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Get the file from database
 	var f File
-	err := db.QueryRow("SELECT id, filename, path, COALESCE(description, '') FROM files WHERE id = ?", fileID).
+	err := DB.QueryRow("SELECT id, filename, path, COALESCE(description, '') FROM files WHERE id = ?", fileID).
 		Scan(&f.ID, &f.Filename, &f.Path, &f.Description)
 	if err != nil {
 		log.Printf("Error: cbzViewerHandler: file not found for id=%s: %v", fileID, err)
@@ -295,7 +295,7 @@ func cbzViewerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cbzPath := filepath.Join(config.UploadDir, f.Path)
+	cbzPath := filepath.Join(Cfg.UploadDir, f.Path)
 
 	// Check if requesting a specific image
 	if len(parts) >= 3 && parts[1] == "image" {

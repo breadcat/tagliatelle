@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func getPreviewFiles(filters []filter) ([]File, error) {
 		WHERE c.name = ?
 		ORDER BY t.value`
 
-	tagRows, err := db.Query(tagQuery, previewCategory)
+	tagRows, err := DB.Query(tagQuery, previewCategory)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tag values: %w", err)
 	}
@@ -43,7 +43,6 @@ func getPreviewFiles(filters []filter) ([]File, error) {
 		}
 		tagValues = append(tagValues, tagValue)
 	}
-
 
 	if len(tagValues) == 0 {
 		return []File{}, nil

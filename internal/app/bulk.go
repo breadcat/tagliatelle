@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"database/sql"
@@ -40,7 +40,7 @@ func applyBulkTagOperations(fileIDs []int, category, value, operation string) er
 		return fmt.Errorf("value cannot be empty when adding tags")
 	}
 
-	tx, err := db.Begin()
+	tx, err := DB.Begin()
 	if err != nil {
 		return fmt.Errorf("failed to start transaction: %v", err)
 	}
@@ -105,7 +105,7 @@ func applyBulkTagOperations(fileIDs []int, category, value, operation string) er
 }
 
 func getBulkTagFormData() BulkTagFormData {
-	catRows, err := db.Query("SELECT name FROM categories ORDER BY name")
+	catRows, err := DB.Query("SELECT name FROM categories ORDER BY name")
 	if err != nil {
 		log.Printf("Error: getBulkTagFormData: failed to query categories: %v", err)
 	}
@@ -123,10 +123,10 @@ func getBulkTagFormData() BulkTagFormData {
 		Categories:  cats,
 		RecentFiles: getRecentFiles(),
 		FormData: struct {
-			FileRange string
-			Category  string
-			Value     string
-			Operation string
+			FileRange     string
+			Category      string
+			Value         string
+			Operation     string
 			TagQuery      string
 			SelectionMode string
 		}{Operation: "add"},
@@ -262,7 +262,6 @@ func bulkTagHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	renderError(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
-
 
 func parseFileIDRange(rangeStr string) ([]int, error) {
 	var fileIDs []int
@@ -422,7 +421,7 @@ func validateFileIDs(fileIDs []int) ([]File, error) {
 	query := fmt.Sprintf("SELECT id, filename, path FROM files WHERE id IN (%s) ORDER BY id",
 		strings.Join(placeholders, ","))
 
-	rows, err := db.Query(query, args...)
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("database error: %v", err)
 	}
@@ -480,7 +479,7 @@ func findFilesWithAnyTag(tags []TagPair) ([]int, error) {
 	query += strings.Join(conditions, " OR ")
 	query += " ORDER BY f.id"
 
-	rows, err := db.Query(query, args...)
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("database query failed: %w", err)
 	}
@@ -497,7 +496,6 @@ func findFilesWithAnyTag(tags []TagPair) ([]int, error) {
 
 	return fileIDs, rows.Err()
 }
-
 
 func findFilesWithAllTags(tags []TagPair) ([]int, error) {
 	if len(tags) == 0 {
@@ -529,7 +527,7 @@ func findFilesWithAllTags(tags []TagPair) ([]int, error) {
 	query += strings.Join(conditions, " AND ")
 	query += " ORDER BY f.id"
 
-	rows, err := db.Query(query, args...)
+	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("database query failed: %w", err)
 	}

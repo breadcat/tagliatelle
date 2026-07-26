@@ -1,16 +1,16 @@
-package main
+package app
 
 import (
-    "fmt"
-    "io"
-    "log"
-    "net/http"
-    "net/url"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "strconv"
-    "strings"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
@@ -72,58 +72,58 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func processUpload(src io.Reader, filename string) (int64, string, error) {
-    finalFilename, finalPath, conflictID, err := checkFileConflictStrict(filename)
-    if err != nil {
-        return 0, "", err
-    }
-    if conflictID != 0 {
-        return conflictID, "", nil
-    }
+	finalFilename, finalPath, conflictID, err := checkFileConflictStrict(filename)
+	if err != nil {
+		return 0, "", err
+	}
+	if conflictID != 0 {
+		return conflictID, "", nil
+	}
 
-    tempPath := finalPath + ".tmp"
-    tempFile, err := os.Create(tempPath)
-    if err != nil {
-        return 0, "", fmt.Errorf("failed to create temp file: %v", err)
-    }
+	tempPath := finalPath + ".tmp"
+	tempFile, err := os.Create(tempPath)
+	if err != nil {
+		return 0, "", fmt.Errorf("failed to create temp file: %v", err)
+	}
 
-    _, err = io.Copy(tempFile, src)
-    tempFile.Close()
-    if err != nil {
-        os.Remove(tempPath)
-        return 0, "", fmt.Errorf("failed to copy file data: %v", err)
-    }
+	_, err = io.Copy(tempFile, src)
+	tempFile.Close()
+	if err != nil {
+		os.Remove(tempPath)
+		return 0, "", fmt.Errorf("failed to copy file data: %v", err)
+	}
 
-    ext := strings.ToLower(filepath.Ext(filename))
-    videoExts := map[string]bool{
-        ".mp4": true, ".mov": true, ".avi": true,
-        ".mkv": true, ".webm": true, ".m4v": true,
-    }
+	ext := strings.ToLower(filepath.Ext(filename))
+	videoExts := map[string]bool{
+		".mp4": true, ".mov": true, ".avi": true,
+		".mkv": true, ".webm": true, ".m4v": true,
+	}
 
-    var processedPath string
-    var warningMsg string
+	var processedPath string
+	var warningMsg string
 
-    if videoExts[ext] || ext == ".cbz" {
-        // Process videos and CBZ files
-        processedPath, warningMsg, err = processVideoFile(tempPath, finalPath)
-        if err != nil {
-            os.Remove(tempPath)
-            return 0, "", err
-        }
-    } else {
-        // Non-video, non-CBZ → just rename temp file to final
-        if err := os.Rename(tempPath, finalPath); err != nil {
-            return 0, "", fmt.Errorf("failed to move file: %v", err)
-        }
-        processedPath = finalPath
-    }
+	if videoExts[ext] || ext == ".cbz" {
+		// Process videos and CBZ files
+		processedPath, warningMsg, err = processVideoFile(tempPath, finalPath)
+		if err != nil {
+			os.Remove(tempPath)
+			return 0, "", err
+		}
+	} else {
+		// Non-video, non-CBZ → just rename temp file to final
+		if err := os.Rename(tempPath, finalPath); err != nil {
+			return 0, "", fmt.Errorf("failed to move file: %v", err)
+		}
+		processedPath = finalPath
+	}
 
-    id, err := saveFileToDatabase(finalFilename, processedPath)
-    if err != nil {
-        os.Remove(processedPath)
-        return 0, "", err
-    }
+	id, err := saveFileToDatabase(finalFilename, processedPath)
+	if err != nil {
+		os.Remove(processedPath)
+		return 0, "", err
+	}
 
-    return id, warningMsg, nil
+	return id, warningMsg, nil
 }
 
 func uploadFromURLHandler(w http.ResponseWriter, r *http.Request) {
@@ -189,7 +189,7 @@ func ytdlpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	outTemplate := filepath.Join(config.UploadDir, "%(title)s.%(ext)s")
+	outTemplate := filepath.Join(Cfg.UploadDir, "%(title)s.%(ext)s")
 	filenameCmd := exec.Command("yt-dlp", "--playlist-items", "1", "-f", "mp4", "-o", outTemplate, "--get-filename", videoURL)
 	filenameBytes, err := filenameCmd.Output()
 	if err != nil {
@@ -255,7 +255,7 @@ func processVideoFile(tempPath, finalPath string) (string, string, error) {
 		if err := os.Rename(tempPath, finalPath); err != nil {
 			return "", "", fmt.Errorf("failed to move file: %v", err)
 		}
-		if err := generateCBZThumbnail(finalPath, config.UploadDir, filepath.Base(finalPath)); err != nil {
+		if err := generateCBZThumbnail(finalPath, Cfg.UploadDir, filepath.Base(finalPath)); err != nil {
 			log.Printf("Warning: could not generate CBZ thumbnail: %v", err)
 		}
 		return finalPath, "", nil
@@ -273,7 +273,7 @@ func processVideoFile(tempPath, finalPath string) (string, string, error) {
 		}
 		os.Remove(tempPath)
 
-		if err := generateThumbnail(finalPath, config.UploadDir, filepath.Base(finalPath)); err != nil {
+		if err := generateThumbnail(finalPath, Cfg.UploadDir, filepath.Base(finalPath)); err != nil {
 			log.Printf("Warning: could not generate thumbnail after HEVC re-encode: %v", err)
 		}
 
@@ -285,7 +285,7 @@ func processVideoFile(tempPath, finalPath string) (string, string, error) {
 
 	// Generate thumbnail for video files
 	if ext == ".mp4" || ext == ".mov" || ext == ".avi" || ext == ".mkv" || ext == ".webm" || ext == ".m4v" {
-		if err := generateThumbnail(finalPath, config.UploadDir, filepath.Base(finalPath)); err != nil {
+		if err := generateThumbnail(finalPath, Cfg.UploadDir, filepath.Base(finalPath)); err != nil {
 			log.Printf("Warning: could not generate thumbnail: %v", err)
 		}
 	}
@@ -294,12 +294,12 @@ func processVideoFile(tempPath, finalPath string) (string, string, error) {
 }
 
 func saveFileToDatabase(filename, path string) (int64, error) {
-	relPath, err := filepath.Rel(config.UploadDir, path)
+	relPath, err := filepath.Rel(Cfg.UploadDir, path)
 	if err != nil {
 		return 0, fmt.Errorf("failed to compute relative path: %v", err)
 	}
 
-	res, err := db.Exec("INSERT INTO files (filename, path, description) VALUES (?, ?, '')", filename, relPath)
+	res, err := DB.Exec("INSERT INTO files (filename, path, description) VALUES (?, ?, '')", filename, relPath)
 	if err != nil {
 		return 0, fmt.Errorf("failed to save file to database: %v", err)
 	}
@@ -310,7 +310,6 @@ func saveFileToDatabase(filename, path string) (int64, error) {
 	computeProperties(id, path)
 	return id, nil
 }
-
 
 func detectVideoCodec(filePath string) (string, error) {
 	cmd := exec.Command("ffprobe", "-v", "error", "-select_streams", "v:0",

@@ -1,15 +1,15 @@
-package main
+package app
 
 import (
-    "bytes"
-    "fmt"
-    "log"
-    "net/http"
-    "net/url"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "strings"
+	"bytes"
+	"fmt"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 type VideoFile struct {
@@ -43,7 +43,7 @@ func generateThumbnailAtTime(videoPath, uploadDir, filename, timestamp string) e
 func getVideoFiles() ([]VideoFile, error) {
 	videoExts := []string{".mp4", ".webm", ".mov", ".avi", ".mkv", ".m4v"}
 
-	rows, err := db.Query(`SELECT id, filename, path FROM files ORDER BY id DESC`)
+	rows, err := DB.Query(`SELECT id, filename, path FROM files ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func getVideoFiles() ([]VideoFile, error) {
 		}
 
 		v.EscapedFilename = url.PathEscape(v.Filename)
-		thumbPath := filepath.Join(config.UploadDir, "thumbnails", v.Filename+".jpg")
+		thumbPath := filepath.Join(Cfg.UploadDir, "thumbnails", v.Filename+".jpg")
 		v.ThumbnailPath = "/uploads/thumbnails/" + v.EscapedFilename + ".jpg"
 
 		if _, err := os.Stat(thumbPath); err == nil {
@@ -142,7 +142,7 @@ func generateThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 		var errors []string
 
 		for _, v := range missing {
-			if err := generateThumbnail(v.Path, config.UploadDir, v.Filename); err != nil {
+			if err := generateThumbnail(v.Path, Cfg.UploadDir, v.Filename); err != nil {
 				log.Printf("Error: generateThumbnailHandler: failed to generate thumbnail for %s: %v", v.Filename, err)
 				errors = append(errors, fmt.Sprintf("%s: %v", v.Filename, err))
 			} else {
@@ -165,7 +165,7 @@ func generateThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var filename, path string
-		err := db.QueryRow("SELECT filename, path FROM files WHERE id=?", fileID).Scan(&filename, &path)
+		err := DB.QueryRow("SELECT filename, path FROM files WHERE id=?", fileID).Scan(&filename, &path)
 		if err != nil {
 			log.Printf("Error: generateThumbnailHandler: file not found for id=%s: %v", fileID, err)
 			http.Redirect(w, r, redirectBase+"?error="+url.QueryEscape("File not found"), http.StatusSeeOther)
@@ -173,10 +173,10 @@ func generateThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !filepath.IsAbs(path) {
-			path = filepath.Join(config.UploadDir, path)
+			path = filepath.Join(Cfg.UploadDir, path)
 		}
 
-		if err = generateThumbnailAtTime(path, config.UploadDir, filename, timestamp); err != nil {
+		if err = generateThumbnailAtTime(path, Cfg.UploadDir, filename, timestamp); err != nil {
 			log.Printf("Error: generateThumbnailHandler: failed to generate thumbnail for file id=%s at %s: %v", fileID, timestamp, err)
 			http.Redirect(w, r, redirectBase+"?error="+url.QueryEscape("Failed to generate thumbnail: "+err.Error()), http.StatusSeeOther)
 			return

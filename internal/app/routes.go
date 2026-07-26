@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"net/http"
@@ -32,6 +32,6 @@ func RegisterRoutes() {
 	http.HandleFunc("/untagged", untaggedFilesHandler)
 	http.HandleFunc("/upload-url", uploadFromURLHandler)
 	// Static file serving
-	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(config.UploadDir))))
+	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir(Cfg.UploadDir))))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 }
