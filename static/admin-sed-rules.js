@@ -114,9 +114,3 @@ function appendHidden(form, name, value) {
     input.dataset.generated = '1';
     form.appendChild(input);
 }
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
