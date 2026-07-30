@@ -29,12 +29,5 @@ function showThumbnailSubTab(subTabName) {
 document.addEventListener('DOMContentLoaded', function() {
     showAdminTab(window.activeAdminTab || 'settings');
     showThumbnailSubTab('missing');
-
-    document.querySelectorAll('.auto-hide-success').forEach(div => {
-        setTimeout(() => {
-            div.style.transition = 'opacity 0.5s';
-            div.style.opacity = '0';
-            setTimeout(() => div.remove(), 500);
-        }, 5000);
-    });
+    autoHideSuccessMessages();
 });

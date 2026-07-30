@@ -13,3 +13,14 @@ function appendHidden(form, name, value) {
     input.dataset.generated = '1';
     form.appendChild(input);
 }
+
+// Fades out and removes elements matching selector
+function autoHideSuccessMessages(selector = '.auto-hide-success', delay = 5000) {
+    document.querySelectorAll(selector).forEach(div => {
+        setTimeout(() => {
+            div.style.transition = 'opacity 0.5s';
+            div.style.opacity = '0';
+            setTimeout(() => div.remove(), 500);
+        }, delay);
+    });
+}

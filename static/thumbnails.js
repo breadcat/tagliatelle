@@ -15,20 +15,7 @@ function showTab(tabName) {
     document.getElementById('tab-' + tabName).style.fontWeight = 'bold';
 }
 
-// Auto-hide success messages
-function autoHideSuccess() {
-    const successDivs = document.querySelectorAll('.auto-hide-success');
-    successDivs.forEach(div => {
-        setTimeout(() => {
-            div.style.transition = 'opacity 0.5s';
-            div.style.opacity = '0';
-            setTimeout(() => div.remove(), 500);
-        }, 5000);
-    });
-}
-
-// Call auto-hide
-autoHideSuccess();
+autoHideSuccessMessages();
 
 // Add video preview on hover
 document.querySelectorAll('video').forEach(video => {
