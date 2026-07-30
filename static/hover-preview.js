@@ -29,9 +29,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const isVideo = VIDEO_EXTENSIONS.test(filename);
     if (!isImage && !isVideo) return;
 
+    const encodedFilename = encodeURIComponent(filename);
     const thumbUrl = isVideo
-      ? '/uploads/thumbnails/' + filename + '.jpg'
-      : '/uploads/' + filename;
+      ? '/uploads/thumbnails/' + encodedFilename + '.jpg'
+      : '/uploads/' + encodedFilename;
 
     link.addEventListener('mouseenter', function () {
       tooltipImg.src = thumbUrl;
