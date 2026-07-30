@@ -54,6 +54,9 @@ function makeTimestampsClickable(containerId, videoId, imageId) {
   // Restore the markdown links now that no other regex can touch them
   container.innerHTML = html.replace(/\u0000MDLINK(\d+)\u0000/g, (_, i) => mdLinks[Number(i)]);
   // Handle clicks
+  if (container.dataset.timestampClickBound) return;
+  container.dataset.timestampClickBound = 'true';
+
   container.addEventListener("click", e => {
     if (e.target.classList.contains("timestamp")) {
       e.preventDefault();

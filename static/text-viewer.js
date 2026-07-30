@@ -50,6 +50,9 @@ function makeLineNumbersClickable(containerId, viewerId) {
     return `<a href="#" class="line-link" data-line="${lineNum}">${match}</a>`;
   });
 
+  if (container.dataset.lineClickBound) return;
+  container.dataset.lineClickBound = 'true';
+
   container.addEventListener("click", e => {
     if (e.target.classList.contains("line-link")) {
       e.preventDefault();
