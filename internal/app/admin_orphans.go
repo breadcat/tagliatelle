@@ -6,9 +6,14 @@ import (
 	"os"
 )
 
+type OrphanFile struct {
+	ID       int
+	Filename string
+}
+
 type OrphanData struct {
-	Orphans        []string // on disk, not in DB
-	ReverseOrphans []string // in DB, not on disk
+	Orphans        []OrphanFile // on disk, not in DB
+	ReverseOrphans []OrphanFile // in DB, not on disk
 }
 
 func getOrphanedFiles(uploadDir string) (OrphanData, error) {
@@ -27,17 +32,22 @@ func getOrphanedFiles(uploadDir string) (OrphanData, error) {
 		diskFileSet[f] = true
 	}
 
-	var orphans []string
+	var orphans []OrphanFile
 	for _, f := range diskFiles {
-		if !dbFiles[f] {
-			orphans = append(orphans, f)
+		if _, ok := dbFiles[f]; !ok {
+			orphans = append(orphans, OrphanFile{
+				Filename: f,
+			})
 		}
 	}
 
-	var reverseOrphans []string
-	for f := range dbFiles {
-		if !diskFileSet[f] {
-			reverseOrphans = append(reverseOrphans, f)
+	var reverseOrphans []OrphanFile
+	for filename, file := range dbFiles {
+		if !diskFileSet[filename] {
+			reverseOrphans = append(reverseOrphans, OrphanFile{
+				ID:       file.ID,
+				Filename: file.Filename,
+			})
 		}
 	}
 

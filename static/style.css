@@ -218,7 +218,6 @@ div.config-split {flex: 1}
 .admin-form-top {margin-top:20px}
 .admin-hint {color:#666}
 .admin-hint--inline {margin-left:10px}
-.admin-hint--spaced {margin-bottom:12px}
 /* buttons */
 .admin-btn {padding:10px 20px;border:none;border-radius:4px;font-size:16px;cursor:pointer;color:#fff}
 .admin-btn--sm {padding:8px 16px;font-size:14px}
@@ -238,7 +237,6 @@ div.config-split {flex: 1}
 .thumb-subtab-btn--active {border-bottom-color:#007bff;font-weight:bold}
 /* orphans */
 .admin-orphan-heading {margin-top:24px}
-.admin-orphan-heading--db {margin-top:32px}
 .admin-orphan-list {list-style-type:disc;padding-left:20px}
 .admin-orphan-item {margin-bottom:5px;font-family:monospace}
 /* thumbnails */

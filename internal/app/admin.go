@@ -22,6 +22,11 @@ type AdminPageData struct {
 	RecentFiles       []File
 }
 
+type DBFile struct {
+	ID       int
+	Filename string
+}
+
 type SedRule struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -280,20 +285,22 @@ func vacuumDatabase() error {
 	return nil
 }
 
-func getFilesInDB() (map[string]bool, error) {
-	rows, err := DB.Query("SELECT filename FROM files")
+func getFilesInDB() (map[string]DBFile, error) {
+	rows, err := DB.Query("SELECT id, filename FROM files")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	fileMap := make(map[string]bool)
+	fileMap := make(map[string]DBFile)
 	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+		var file DBFile
+
+		if err := rows.Scan(&file.ID, &file.Filename); err != nil {
 			return nil, err
 		}
-		fileMap[name] = true
+
+		fileMap[file.Filename] = file
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
