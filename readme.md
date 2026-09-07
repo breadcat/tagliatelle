@@ -39,7 +39,7 @@ Then access the server via a web browser, the default port is 8080.
 * Orphan and reverse orphan finding
 * Database backup and vacuum support
 * `tag=!`, `tag=!123` and `tag=x,value=!` for duplicating previously applied tags
-* Chainable `/and/tag/tag2/value2` filter matching
+* Chainable `/and/tag/tag2/value2` and `/and/tag/tag2/previews` filter matching
 * `Ctrl+Enter` to open search results in a new tab
 
 ## Limitations
