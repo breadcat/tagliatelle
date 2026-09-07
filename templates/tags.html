@@ -10,6 +10,7 @@
 </ul>
 </details>
 {{end}}
+{{if gt .UntaggedCount 0}}<a href="/untagged">Untagged ({{.UntaggedCount}})</a>{{end}}
 
 <script src="/static/list-filter.js" defer></script>
 <script src="/static/list-open.js" defer></script>
