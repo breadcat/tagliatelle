@@ -22,8 +22,10 @@
         <a href="/tags#tag-{{$cat}}">{{$cat}}</a>
         <ul>
           {{if gt (len $tags) 65}}
-            <li><a href="/tags#tag-{{$cat}}">{{len $tags}} entries...</a></li>
-          {{else}}
+            <li class="tag-filter"><input type="text" class="tag-filter-input" placeholder="Filter {{len $tags}} entries..." autocomplete="off" aria-label="Filter {{$cat}} tags"></li>
+            <li class="tag-filter-more"><a href="/tags#tag-{{$cat}}">{{len $tags}} entries...</a></li>
+            {{range $tags}}<li class="tag-filter-item" data-name="{{.Value}}" style="display:none"><a href="/tag/{{$cat}}/{{.Value}}">{{.Value}} ({{.Count}})</a></li>
+            {{end}}{{else}}
             {{range $tags}}<li><a href="/tag/{{$cat}}/{{.Value}}">{{.Value}} ({{.Count}})</a></li>
             {{end}}
           {{end}}<li><a href="/tag/{{$cat}}/previews">Previews</a></li>
@@ -53,6 +55,7 @@
   </form>
 </div>
 <script src="/static/search-box.js" defer></script>
+<script src="/static/header-menu-filter.js" defer></script>
 </nav>
 
 
