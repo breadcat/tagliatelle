@@ -31,6 +31,8 @@ nav ul.sub-menu li {border-right: none}
 nav ul.sub-menu li a{color:#add8e6;background:#1a1a1a; min-width: 110px; text-transform:capitalize}
 nav ul.sub-menu li ul li a{min-width: 170px}
 nav ul.sub-menu li a:hover{background:#2a2a2a}
+nav ul li ul li{display:block}
+nav ul li ul li ul li a{max-width:320px;overflow:hidden;text-overflow:ellipsis}
 
 /* responsive nav bar */
 @media (max-width: 600px) {
@@ -47,8 +49,7 @@ nav ul li {  font-size: 1rem; }
 div.gallery-item {padding:1rem}
 div.gallery-item a{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 div.gallery-item a svg{filter: invert(100%);}
-div.gallery-item,div.gallery-item a,nav ul li,nav>ul>li{display:inline-block}
-div.gallery-item,div.gallery-item a{display:inline-block}
+div.gallery-item,div.gallery-item a,nav>ul>li{display:inline-block}
 div.play-button {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 0; height: 0; border-left: 15px solid white; border-top: 10px solid transparent; border-bottom: 10px solid transparent}
 div.gallery-video {position: relative; display: inline-block}
 
