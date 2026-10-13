@@ -161,11 +161,7 @@ func uploadFromURLHandler(w http.ResponseWriter, r *http.Request) {
 			filename += urlExt
 		}
 	} else {
-		parts := strings.Split(parsedURL.Path, "/")
-		filename = parts[len(parts)-1]
-		if filename == "" {
-			filename = "file_from_url"
-		}
+		filename = filenameFromURLPath(parsedURL.Path)
 	}
 
 	id, warningMsg, err := processUpload(resp.Body, filename)
@@ -175,6 +171,35 @@ func uploadFromURLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redirectWithWarning(w, r, fmt.Sprintf("/file/%d", id), warningMsg)
+}
+
+// Shortest accepted base name, otherwise use previous part of URL
+const minMeaningfulStemLen = 3
+func filenameFromURLPath(urlPath string) string {
+	var parts []string
+	for _, p := range strings.Split(urlPath, "/") {
+		if p != "" {
+			parts = append(parts, p)
+		}
+	}
+	if len(parts) == 0 {
+		return "file_from_url"
+	}
+
+	last := parts[len(parts)-1]
+	ext := filepath.Ext(last)
+	stem := strings.TrimSuffix(last, ext)
+
+	if len(stem) < minMeaningfulStemLen && len(parts) >= 2 {
+		prev := parts[len(parts)-2]
+		// Don't duplicate file extensions
+		prev = strings.TrimSuffix(prev, filepath.Ext(prev))
+		if prev != "" {
+			return prev + ext
+		}
+	}
+
+	return last
 }
 
 func ytdlpHandler(w http.ResponseWriter, r *http.Request) {
