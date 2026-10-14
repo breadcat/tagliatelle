@@ -178,6 +178,9 @@ img.file-content-image {max-width:400px}
 select:focus{outline:none;border-color:#2563eb}
 select{padding:8px 12px;border:1px solid #d1d5db;border-radius:4px;font-size:14px;cursor:pointer}
 textarea{flex:1;padding:20px;border:none;font-family:'Monaco','Menlo','Consolas',monospace;font-size:13px;line-height:1.6;resize:none}
+.back-to-top {position: fixed; right: 24px; bottom: 24px; z-index: 1000; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; color: #ffffff; background: #2563eb; border-radius: 50%; text-decoration: none;}
+.back-to-top:hover {background: #1d4ed8;}
+.back-to-top:focus-visible {outline: 3px solid #93c5fd; outline-offset: 4px;}
 
 /* admin 50:50 splits */
 div.config-container {display: flex}
