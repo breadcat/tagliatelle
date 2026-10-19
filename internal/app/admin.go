@@ -122,6 +122,9 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 		case "save_sed_rules":
 			handleSaveSedRules(w, r, orphanData, missingThumbnails)
 
+		case "save_magic_links":
+			handleSaveMagicLinks(w, r, orphanData, missingThumbnails)
+
 		case "compute_properties":
 			handleComputeProperties(w, r, orphanData, missingThumbnails)
 		}
@@ -173,6 +176,56 @@ func parseSedRulesFromForm(r *http.Request) ([]SedRule, error) {
 		})
 	}
 	return rules, nil
+}
+
+func parseMagicLinksFromForm(r *http.Request) ([]MagicLinkRule, error) {
+	var rules []MagicLinkRule
+	for i := 0; ; i++ {
+		name := strings.TrimSpace(r.FormValue(fmt.Sprintf("magic_links[%d][name]", i)))
+		if name == "" {
+			break
+		}
+		category := strings.TrimSpace(r.FormValue(fmt.Sprintf("magic_links[%d][category]", i)))
+		value := strings.TrimSpace(r.FormValue(fmt.Sprintf("magic_links[%d][value]", i)))
+		template := strings.TrimSpace(r.FormValue(fmt.Sprintf("magic_links[%d][template]", i)))
+		if category == "" || value == "" || template == "" {
+			return nil, fmt.Errorf("magic link rule %d is missing a tag category, tag value or URL template", i+1)
+		}
+		if !validMagicLinkTemplate(template) {
+			return nil, fmt.Errorf("magic link rule %d: URL template must start with http:// or https://", i+1)
+		}
+		rules = append(rules, MagicLinkRule{
+			Name:     name,
+			Category: category,
+			Value:    value,
+			Template: template,
+		})
+	}
+	return rules, nil
+}
+
+func handleSaveMagicLinks(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+	rules, err := parseMagicLinksFromForm(r)
+	if err != nil {
+		data := currentAdminState(r, orphanData, missingThumbnails)
+		data.Error = err.Error()
+		renderAdminPage(w, r, data)
+		return
+	}
+
+	Cfg.MagicLinks = rules
+
+	if err := SaveConfig(DB, Cfg); err != nil {
+		log.Printf("Error: handleSaveMagicLinks: failed to save configuration: %v", err)
+		data := currentAdminState(r, orphanData, missingThumbnails)
+		data.Error = "Failed to save configuration: " + err.Error()
+		renderAdminPage(w, r, data)
+		return
+	}
+
+	data := currentAdminState(r, orphanData, missingThumbnails)
+	data.Success = "Magic link rules saved successfully!"
+	renderAdminPage(w, r, data)
 }
 
 func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {

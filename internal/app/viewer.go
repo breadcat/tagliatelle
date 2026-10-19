@@ -270,7 +270,8 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 		Categories      []string
 		EscapedFilename string
 		Properties      map[string]string
-	}{f, cats, url.PathEscape(f.Filename), fileProps})
+		MagicLinks      []MagicLink
+	}{f, cats, url.PathEscape(f.Filename), fileProps, buildMagicLinks(Cfg.MagicLinks, f.Tags)})
 
 	renderTemplate(w, "file.html", pageData)
 }

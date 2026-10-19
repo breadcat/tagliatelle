@@ -57,6 +57,17 @@
 		<script src="/static/copy-link.js" defer></script>
 	</details>
 
+	{{if .Data.MagicLinks}}
+    <details open>
+    <summary>Magic Links</summary>
+		<ul id="magic-links">
+		{{range .Data.MagicLinks}}
+		  <li><a href="{{.URL}}" target="_blank" rel="noopener noreferrer">{{.Label}}</a></li>
+		{{end}}
+		</ul>
+	</details>
+	{{end}}
+
     <details>
     <summary>File Actions</summary>
 

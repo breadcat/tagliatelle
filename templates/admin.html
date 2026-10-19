@@ -27,6 +27,9 @@
     <button onclick="showAdminTab('sedrules')" id="admin-tab-sedrules" class="admin-tab-btn">
         Sed Rules
     </button>
+    <button onclick="showAdminTab('magiclinks')" id="admin-tab-magiclinks" class="admin-tab-btn">
+        Magic Links
+    </button>
     <button onclick="showAdminTab('orphans')" id="admin-tab-orphans" class="admin-tab-btn">
         Orphans
     </button>
@@ -184,6 +187,48 @@
     </div>
 </div>
 
+<!-- Magic Links Tab -->
+<div id="admin-content-magiclinks" class="admin-tab-content">
+	<div class="config-container">
+    <div class="config-split">
+    <h2>Magic Links</h2>
+    <p>
+        Build external links in the file viewer from a file's tags.
+        When a file has the given tag, the URL template is expanded using the file's other tags.
+        If no rule matches a file, the Magic Links section is not shown.
+    </p>
+
+    <div id="magiclinks-section" class="admin-section">
+        <div id="magic-link-rules"></div>
+
+        <button onclick="addMagicLinkRule()" class="admin-btn admin-btn--success admin-btn--sm admin-btn--top">
+            + Add Magic Link Rule
+        </button>
+
+        <form method="post" action="/admin" id="magiclinks-form" class="admin-form-top">
+            <input type="hidden" name="active_tab" value="magiclinks">
+            <input type="hidden" name="action" value="save_magic_links">
+            <button type="submit" class="admin-btn admin-btn--primary">
+                Save Magic Links
+            </button>
+        </form>
+    </div>
+    </div>
+
+    <div class="config-split">
+        <h4 class="admin-example-heading">Example:</h4>
+        <ul class="admin-example-list">
+            <li>If <code>source</code> = <code>example</code>, build <code>https://website.tld/$name</code></li>
+            <li><code>$name</code> is replaced by the value of the file's <code>name</code> tag</li>
+            <li>Use <code>${tag category}</code> for categories containing spaces</li>
+            <li>If a tag has several values, one link is shown per value</li>
+            <li>Rules whose variables the file has no tag for are skipped</li>
+            <li>Values are URL-escaped, and tag aliases are honoured when matching</li>
+        </ul>
+    </div>
+    </div>
+</div>
+
 <!-- Orphans Tab -->
 <div id="admin-content-orphans" class="admin-tab-content">
 
@@ -325,9 +370,11 @@
 
 <script>window.initialAliasGroups = {{.Data.Config.TagAliases}};</script>
 <script>window.initialSedRules = {{.Data.Config.SedRules}};</script>
+<script>window.initialMagicLinks = {{.Data.Config.MagicLinks}};</script>
 <script>window.activeAdminTab = "{{.Data.ActiveTab}}";</script>
 <script src="/static/admin-tag-alias.js" defer></script>
 <script src="/static/admin-sed-rules.js" defer></script>
+<script src="/static/admin-magic-links.js" defer></script>
 <script src="/static/admin-tabs.js"></script>
 <script src="/static/common.js" defer></script>
 <script src="/static/hover-preview.js" defer></script>

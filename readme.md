@@ -28,6 +28,7 @@ Then access the server via a web browser, the default port is 8080.
 * Image, video, text and cbz gallery viewers
 * Will transcode incompatible video formats
 * Tag value aliases, e.g. `color:blue` and `color:navy`
+* Configurable magic links, e.g. if `source=example` show `https://website.tld/$name` using the file's `name` tag
 * Regenerate video thumbnails via web interface
 * Add files via local filesystem, remote upload or `yt-dlp` directly
 * Clickable [rotate90](## "Rotates video/image contents by angle on click"), [l45](## "Jumps to line number in text viewer on click"), [01:23](## "Jumps video playback to specified timestamp on click") and [file/1234](## "Clickable link to that file ID") shortcodes in file descriptions

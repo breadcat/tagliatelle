@@ -17,6 +17,7 @@ type Config struct {
 	ItemsPerPage string
 	TagAliases   []TagAliasGroup
 	SedRules     []SedRule
+	MagicLinks   []MagicLinkRule
 }
 
 type TagAliasGroup struct {
@@ -89,6 +90,13 @@ func createTables(DB *sql.DB) error {
 		description TEXT NOT NULL DEFAULT '',
 		command     TEXT NOT NULL
 	);
+	CREATE TABLE IF NOT EXISTS magic_links (
+		id       INTEGER PRIMARY KEY AUTOINCREMENT,
+		name     TEXT NOT NULL,
+		category TEXT NOT NULL,
+		value    TEXT NOT NULL,
+		template TEXT NOT NULL
+	);
 	`
 
 	_, err := DB.Exec(schema)
@@ -101,6 +109,7 @@ func LoadConfig(DB *sql.DB) (Config, error) {
 		ItemsPerPage: "100",
 		TagAliases:   []TagAliasGroup{},
 		SedRules:     []SedRule{},
+		MagicLinks:   []MagicLinkRule{},
 	}
 
 	rows, err := DB.Query(`SELECT key, value FROM settings`)
@@ -163,6 +172,22 @@ func LoadConfig(DB *sql.DB) (Config, error) {
 		return cfg, err
 	}
 
+	magicRows, err := DB.Query(`SELECT name, category, value, template FROM magic_links ORDER BY id`)
+	if err != nil {
+		return cfg, err
+	}
+	defer magicRows.Close()
+	for magicRows.Next() {
+		var rule MagicLinkRule
+		if err := magicRows.Scan(&rule.Name, &rule.Category, &rule.Value, &rule.Template); err != nil {
+			return cfg, err
+		}
+		cfg.MagicLinks = append(cfg.MagicLinks, rule)
+	}
+	if err := magicRows.Err(); err != nil {
+		return cfg, err
+	}
+
 	return cfg, nil
 }
 
@@ -205,6 +230,18 @@ func SaveConfig(DB *sql.DB, cfg Config) error {
 		if _, err := tx.Exec(
 			`INSERT INTO sed_rules (name, description, command) VALUES (?, ?, ?)`,
 			rule.Name, rule.Description, rule.Command,
+		); err != nil {
+			return err
+		}
+	}
+
+	if _, err := tx.Exec(`DELETE FROM magic_links`); err != nil {
+		return err
+	}
+	for _, rule := range cfg.MagicLinks {
+		if _, err := tx.Exec(
+			`INSERT INTO magic_links (name, category, value, template) VALUES (?, ?, ?, ?)`,
+			rule.Name, rule.Category, rule.Value, rule.Template,
 		); err != nil {
 			return err
 		}
