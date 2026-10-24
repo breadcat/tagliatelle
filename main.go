@@ -15,7 +15,9 @@ func main() {
 	// CLI flags
 	dataDir := flag.String("d", ".", "Data directory (stores tagliatelle.db and uploads/ subfolder)")
 	port := flag.String("p", "8080", "Port to listen on")
+	czkawka := flag.String("czkawka", "czkawka_cli", "Path to the czkawka_cli binary (used by the admin Duplicates tab)")
 	flag.Parse()
+	app.CzkawkaBin = *czkawka
 
 	// Derive paths from -d
 	dbPath := filepath.Join(*dataDir, "tagliatelle.db")

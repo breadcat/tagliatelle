@@ -17,6 +17,7 @@ go run . -d your_directory -p 8080
 Then access the server via a web browser, the default port is 8080.
 
 ### Dependencies
+* `czkawka` for similar duplicate reporting
 * `ffprobe` and `ffmpeg` for converting incompatible video uploads
 * `sed` for custom bulk note manipulation
 * `yt-dlp` for video downloader
@@ -38,6 +39,7 @@ Then access the server via a web browser, the default port is 8080.
 * In browser file management (delete, rename)
 * Self-organising, categorised notes, with optional `sed` operation rules
 * Orphan and reverse orphan finding
+* Duplicate reporting and management via [czkawka](https://github.com/qarmin/czkawka).
 * Database backup and vacuum support
 * `tag=!`, `tag=!123` and `tag=x,value=!` for duplicating previously applied tags
 * Chainable `/and/tag/tag2/value2` and `/and/tag/tag2/previews` filter matching
@@ -49,7 +51,6 @@ Then access the server via a web browser, the default port is 8080.
 
 ## Future plans
 * Detect `mpegts` videos and repair them.
-* Implement [jdupes](https://codeberg.org/jbruchon/jdupes) and [czkawka](https://github.com/qarmin/czkawka) duplicate reporting.
 
 ## Credits
 * [mattn/go-sqlite3](https://github.com/mattn/go-sqlite3) for the go SQLite3 library

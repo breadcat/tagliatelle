@@ -36,6 +36,9 @@
     <button onclick="showAdminTab('thumbnails')" id="admin-tab-thumbnails" class="admin-tab-btn">
         Thumbnails
     </button>
+    <button onclick="showAdminTab('duplicates')" id="admin-tab-duplicates" class="admin-tab-btn">
+        Duplicates
+    </button>
 </div>
 
 <!-- Settings Tab -->
@@ -368,6 +371,40 @@
     </div>
 </div>
 
+<!-- Duplicates Tab -->
+<div id="admin-content-duplicates" class="admin-tab-content">
+    <h2>Duplicates</h2>
+    <p class="admin-hint">
+        Scan one or two directories with <code>czkawka_cli</code> for similar images, then compare, delete or replace them.
+        Paths are not saved. Files inside the uploads directory also have their database records updated.
+    </p>
+
+    <form id="dup-form" class="dup-form">
+        <div class="admin-form-group">
+            <label for="dup-dir1" class="admin-form-label">Directory 1:</label>
+            <input type="text" id="dup-dir1" class="admin-mono-input" value="{{.Data.Config.UploadDir}}" placeholder="/path/to/directory">
+        </div>
+        <div class="admin-form-group">
+            <label for="dup-dir2" class="admin-form-label">Directory 2 (optional):</label>
+            <input type="text" id="dup-dir2" class="admin-mono-input" value="" placeholder="/path/to/another/directory">
+        </div>
+        <button type="submit" id="dup-scan" class="admin-btn admin-btn--primary">Scan for duplicates</button>
+        <span id="dup-status" class="dup-status"></span>
+    </form>
+
+    <div id="dup-bar" class="dup-bar" hidden>
+        <strong id="dup-count"></strong>
+        <input type="search" id="dup-filter" class="dup-filter" placeholder="Filter paths… prefix a word with - to exclude (e.g. -results)" autocomplete="off">
+        <span id="dup-msg"></span>
+    </div>
+    <div id="dup-groups"></div>
+    <div id="dup-empty" class="dup-empty" hidden>No similar images found.</div>
+
+    <a href="#top" class="back-to-top" title="Return to top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+    </a>
+</div>
+
 <script>window.initialAliasGroups = {{.Data.Config.TagAliases}};</script>
 <script>window.initialSedRules = {{.Data.Config.SedRules}};</script>
 <script>window.initialMagicLinks = {{.Data.Config.MagicLinks}};</script>
@@ -375,6 +412,7 @@
 <script src="/static/admin-tag-alias.js" defer></script>
 <script src="/static/admin-sed-rules.js" defer></script>
 <script src="/static/admin-magic-links.js" defer></script>
+<script src="/static/admin-duplicates.js" defer></script>
 <script src="/static/admin-tabs.js"></script>
 <script src="/static/common.js" defer></script>
 <script src="/static/hover-preview.js" defer></script>
