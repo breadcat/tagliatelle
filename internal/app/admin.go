@@ -12,12 +12,30 @@ import (
 	"time"
 )
 
+const adminDefaultPath = "/admin/settings"
+const adminThumbnailsPath = "/admin/thumbnails"
+var adminPages = map[string]bool{
+	"settings":              true,
+	"database":              true,
+	"aliases":               true,
+	"sed-rules":             true,
+	"magic-links":           true,
+	"orphans":               true,
+	"thumbnails":            true,
+	"thumbnails/regenerate": true,
+	"duplicates":            true,
+}
+
+func adminTabFromPath(p string) string {
+	return strings.Trim(strings.TrimPrefix(p, "/admin"), "/")
+}
+
 type AdminPageData struct {
 	Config            Config
 	Error             string
 	Success           string
 	OrphanData        OrphanData
-	ActiveTab         string
+	Tab               string
 	MissingThumbnails []VideoFile
 	RecentFiles       []File
 }
@@ -33,11 +51,32 @@ type SedRule struct {
 	Command     string `json:"command"`
 }
 
-func renderAdminPage(w http.ResponseWriter, r *http.Request, data AdminPageData) {
-	if data.ActiveTab == "" {
-		data.ActiveTab = r.FormValue("active_tab")
+// Only load data for relevant admin page
+func loadAdminTabData(data *AdminPageData) {
+	switch data.Tab {
+	case "orphans":
+		orphanData, err := getOrphanedFiles(Cfg.UploadDir)
+		if err != nil {
+			log.Printf("Warning: loadAdminTabData: failed to get orphaned files: %v", err)
+		}
+		data.OrphanData = orphanData
+
+	case "thumbnails":
+		missing, err := getMissingThumbnailVideos()
+		if err != nil {
+			log.Printf("Warning: loadAdminTabData: failed to get missing thumbnails: %v", err)
+		}
+		data.MissingThumbnails = missing
+
+	case "thumbnails/regenerate":
+		data.RecentFiles = getRecentFiles()
 	}
+}
+
+func renderAdminPage(w http.ResponseWriter, r *http.Request, data AdminPageData) {
+	loadAdminTabData(&data)
 	pageData := buildPageData("Admin", data)
+	pageData.AdminTab = data.Tab
 	renderTemplate(w, "admin.html", pageData)
 }
 
@@ -57,13 +96,13 @@ func getRecentFiles() []File {
 	return files
 }
 
-func currentAdminState(r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) AdminPageData {
+func currentAdminState(r *http.Request) AdminPageData {
+	q := r.URL.Query()
 	return AdminPageData{
-		Config:            Cfg,
-		OrphanData:        orphanData,
-		ActiveTab:         r.FormValue("active_tab"),
-		MissingThumbnails: missingThumbnails,
-		RecentFiles:       getRecentFiles(),
+		Config:  Cfg,
+		Tab:     adminTabFromPath(r.URL.Path),
+		Success: q.Get("success"),
+		Error:   q.Get("error"),
 	}
 }
 
@@ -77,31 +116,38 @@ func validateConfig(newConfig Config) error {
 	return nil
 }
 
-func adminHandler(w http.ResponseWriter, r *http.Request) {
-	// Get orphaned files
-	orphanData, err := getOrphanedFiles(Cfg.UploadDir)
-	if err != nil {
-		log.Printf("Warning: adminHandler: failed to get orphaned files: %v", err)
+func adminIndexHandler(w http.ResponseWriter, r *http.Request) {
+	target := adminDefaultPath
+	if r.URL.RawQuery != "" {
+		target += "?" + r.URL.RawQuery
 	}
+	http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+}
 
-	// Get video files for thumbnails
-	missingThumbnails, err := getMissingThumbnailVideos()
-	if err != nil {
-		log.Printf("Warning: adminHandler: failed to get missing thumbnails: %v", err)
+// serve /admin/slug
+func adminHandler(w http.ResponseWriter, r *http.Request) {
+	slug := adminTabFromPath(r.URL.Path)
+	if slug == "" {
+		adminIndexHandler(w, r)
+		return
+	}
+	if !adminPages[slug] {
+		http.NotFound(w, r)
+		return
 	}
 
 	switch r.Method {
 	case http.MethodPost:
 		switch r.FormValue("action") {
 		case "save", "":
-			handleSaveSettings(w, r, orphanData, missingThumbnails)
+			handleSaveSettings(w, r)
 
 		case "backup":
 			err := backupDatabase(Cfg.DatabasePath)
 			if err != nil {
 				log.Printf("Error: adminHandler: database backup failed: %v", err)
 			}
-			data := currentAdminState(r, orphanData, missingThumbnails)
+			data := currentAdminState(r)
 			data.Error = errorString(err)
 			data.Success = successString(err, "Database backup created successfully!")
 			renderAdminPage(w, r, data)
@@ -111,26 +157,26 @@ func adminHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Printf("Error: adminHandler: database vacuum failed: %v", err)
 			}
-			data := currentAdminState(r, orphanData, missingThumbnails)
+			data := currentAdminState(r)
 			data.Error = errorString(err)
 			data.Success = successString(err, "Database vacuum completed successfully!")
 			renderAdminPage(w, r, data)
 
 		case "save_aliases":
-			handleSaveAliases(w, r, orphanData, missingThumbnails)
+			handleSaveAliases(w, r)
 
 		case "save_sed_rules":
-			handleSaveSedRules(w, r, orphanData, missingThumbnails)
+			handleSaveSedRules(w, r)
 
 		case "save_magic_links":
-			handleSaveMagicLinks(w, r, orphanData, missingThumbnails)
+			handleSaveMagicLinks(w, r)
 
 		case "compute_properties":
-			handleComputeProperties(w, r, orphanData, missingThumbnails)
+			handleComputeProperties(w, r)
 		}
 
 	default:
-		renderAdminPage(w, r, currentAdminState(r, orphanData, missingThumbnails))
+		renderAdminPage(w, r, currentAdminState(r))
 	}
 }
 
@@ -204,10 +250,10 @@ func parseMagicLinksFromForm(r *http.Request) ([]MagicLinkRule, error) {
 	return rules, nil
 }
 
-func handleSaveMagicLinks(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+func handleSaveMagicLinks(w http.ResponseWriter, r *http.Request) {
 	rules, err := parseMagicLinksFromForm(r)
 	if err != nil {
-		data := currentAdminState(r, orphanData, missingThumbnails)
+		data := currentAdminState(r)
 		data.Error = err.Error()
 		renderAdminPage(w, r, data)
 		return
@@ -217,40 +263,40 @@ func handleSaveMagicLinks(w http.ResponseWriter, r *http.Request, orphanData Orp
 
 	if err := SaveConfig(DB, Cfg); err != nil {
 		log.Printf("Error: handleSaveMagicLinks: failed to save configuration: %v", err)
-		data := currentAdminState(r, orphanData, missingThumbnails)
+		data := currentAdminState(r)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
 		return
 	}
 
-	data := currentAdminState(r, orphanData, missingThumbnails)
+	data := currentAdminState(r)
 	data.Success = "Magic link rules saved successfully!"
 	renderAdminPage(w, r, data)
 }
 
-func handleSaveAliases(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+func handleSaveAliases(w http.ResponseWriter, r *http.Request) {
 	Cfg.TagAliases = parseAliasesFromForm(r)
 
 	if err := SaveConfig(DB, Cfg); err != nil {
 		log.Printf("Error: handleSaveAliases: failed to save configuration: %v", err)
-		data := currentAdminState(r, orphanData, missingThumbnails)
+		data := currentAdminState(r)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
 		return
 	}
 
-	data := currentAdminState(r, orphanData, missingThumbnails)
+	data := currentAdminState(r)
 	data.Success = "Tag aliases saved successfully!"
 	renderAdminPage(w, r, data)
 }
 
-func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+func handleSaveSettings(w http.ResponseWriter, r *http.Request) {
 	newConfig := Cfg // preserve runtime fields
 	newConfig.GallerySize = strings.TrimSpace(r.FormValue("gallery_size"))
 	newConfig.ItemsPerPage = strings.TrimSpace(r.FormValue("items_per_page"))
 
 	if err := validateConfig(newConfig); err != nil {
-		data := currentAdminState(r, orphanData, missingThumbnails)
+		data := currentAdminState(r)
 		data.Error = err.Error()
 		renderAdminPage(w, r, data)
 		return
@@ -260,21 +306,21 @@ func handleSaveSettings(w http.ResponseWriter, r *http.Request, orphanData Orpha
 
 	if err := SaveConfig(DB, Cfg); err != nil {
 		log.Printf("Error: handleSaveSettings: failed to save configuration: %v", err)
-		data := currentAdminState(r, orphanData, missingThumbnails)
+		data := currentAdminState(r)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
 		return
 	}
 
-	data := currentAdminState(r, orphanData, missingThumbnails)
+	data := currentAdminState(r)
 	data.Success = "Settings saved successfully!"
 	renderAdminPage(w, r, data)
 }
 
-func handleSaveSedRules(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+func handleSaveSedRules(w http.ResponseWriter, r *http.Request) {
 	rules, err := parseSedRulesFromForm(r)
 	if err != nil {
-		data := currentAdminState(r, orphanData, missingThumbnails)
+		data := currentAdminState(r)
 		data.Error = err.Error()
 		renderAdminPage(w, r, data)
 		return
@@ -284,13 +330,13 @@ func handleSaveSedRules(w http.ResponseWriter, r *http.Request, orphanData Orpha
 
 	if err := SaveConfig(DB, Cfg); err != nil {
 		log.Printf("Error: handleSaveSedRules: failed to save configuration: %v", err)
-		data := currentAdminState(r, orphanData, missingThumbnails)
+		data := currentAdminState(r)
 		data.Error = "Failed to save configuration: " + err.Error()
 		renderAdminPage(w, r, data)
 		return
 	}
 
-	data := currentAdminState(r, orphanData, missingThumbnails)
+	data := currentAdminState(r)
 	data.Success = "Sed rules saved successfully!"
 	renderAdminPage(w, r, data)
 }

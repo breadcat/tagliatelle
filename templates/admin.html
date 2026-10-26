@@ -13,42 +13,13 @@
 </div>
 {{end}}
 
-<!-- Tab Navigation -->
-<div class="admin-tab-nav">
-    <button onclick="showAdminTab('settings')" id="admin-tab-settings" class="admin-tab-btn admin-tab-btn--active">
-        Settings
-    </button>
-    <button onclick="showAdminTab('database')" id="admin-tab-database" class="admin-tab-btn">
-        Database
-    </button>
-    <button onclick="showAdminTab('aliases')" id="admin-tab-aliases" class="admin-tab-btn">
-        Aliases
-    </button>
-    <button onclick="showAdminTab('sedrules')" id="admin-tab-sedrules" class="admin-tab-btn">
-        Sed Rules
-    </button>
-    <button onclick="showAdminTab('magiclinks')" id="admin-tab-magiclinks" class="admin-tab-btn">
-        Magic Links
-    </button>
-    <button onclick="showAdminTab('orphans')" id="admin-tab-orphans" class="admin-tab-btn">
-        Orphans
-    </button>
-    <button onclick="showAdminTab('thumbnails')" id="admin-tab-thumbnails" class="admin-tab-btn">
-        Thumbnails
-    </button>
-    <button onclick="showAdminTab('duplicates')" id="admin-tab-duplicates" class="admin-tab-btn">
-        Duplicates
-    </button>
-</div>
-
-<!-- Settings Tab -->
-<div id="admin-content-settings">
+{{if eq .Data.Tab "settings"}}
+<!-- Settings -->
+<div>
 	<div class="config-container">
     <div class="config-split">
     <h2>Settings</h2>
     <form method="post" class="admin-form">
-        <input type="hidden" name="active_tab" value="settings">
-
         <div class="admin-form-group">
             <label for="gallery_size" class="admin-form-label">Gallery Size:</label>
             <input type="text" id="gallery_size" name="gallery_size" value="{{.Data.Config.GallerySize}}" required
@@ -85,13 +56,14 @@
     </div>
     </div>
 </div>
+{{end}}
 
-<!-- Database Tab -->
-<div id="admin-content-database" class="admin-tab-content">
+{{if eq .Data.Tab "database"}}
+<!-- Database -->
+<div>
     <h2>Database Maintenance</h2>
 
     <form method="post" class="admin-form-inline">
-        <input type="hidden" name="active_tab" value="database">
         <input type="hidden" name="action" value="backup">
         <button type="submit" class="admin-btn admin-btn--success">
             Backup Database
@@ -100,7 +72,6 @@
     </form>
 
     <form method="post">
-        <input type="hidden" name="active_tab" value="database">
         <input type="hidden" name="action" value="vacuum">
         <button type="submit" class="admin-btn admin-btn--purple">
             Vacuum Database
@@ -114,7 +85,6 @@
         Compute auto-detected properties (filetype, duration, orientation, resolution) for any files that do not yet have them.
     </p>
     <form method="post">
-        <input type="hidden" name="active_tab" value="database">
         <input type="hidden" name="action" value="compute_properties">
         <button type="submit" class="admin-btn admin-btn--teal">
             Compute Missing Properties
@@ -122,9 +92,11 @@
         <small class="admin-hint admin-hint--inline">Processes only files with no existing properties</small>
     </form>
 </div>
+{{end}}
 
-<!-- Aliases Tab -->
-<div id="admin-content-aliases" class="admin-tab-content">
+{{if eq .Data.Tab "aliases"}}
+<!-- Aliases -->
+<div>
     <h2>Tag Aliases</h2>
     <p>
         Define tag aliases so that multiple tag values are treated as equivalent when searching or filtering.
@@ -139,7 +111,6 @@
         </button>
 
         <form method="post" id="aliases-form" class="admin-form-top">
-            <input type="hidden" name="active_tab" value="aliases">
             <input type="hidden" name="action" value="save_aliases">
             <input type="hidden" name="aliases_json" id="aliases_json">
             <button type="submit" class="admin-btn admin-btn--primary">
@@ -148,9 +119,11 @@
         </form>
     </div>
 </div>
+{{end}}
 
-<!-- Sed Rules Tab -->
-<div id="admin-content-sedrules" class="admin-tab-content">
+{{if eq .Data.Tab "sed-rules"}}
+<!-- Sed Rules -->
+<div>
 	<div class="config-container">
     <div class="config-split">
     <h2>Sed Rules for Notes</h2>
@@ -166,8 +139,7 @@
             + Add Sed Rule
         </button>
 
-        <form method="post" action="/admin" id="sedrules-form" class="admin-form-top">
-            <input type="hidden" name="active_tab" value="sedrules">
+        <form method="post" id="sedrules-form" class="admin-form-top">
             <input type="hidden" name="action" value="save_sed_rules">
             <input type="hidden" name="sed_rules_json" id="sed_rules_json">
             <button type="submit" class="admin-btn admin-btn--primary">
@@ -189,9 +161,11 @@
     </div>
     </div>
 </div>
+{{end}}
 
-<!-- Magic Links Tab -->
-<div id="admin-content-magiclinks" class="admin-tab-content">
+{{if eq .Data.Tab "magic-links"}}
+<!-- Magic Links -->
+<div>
 	<div class="config-container">
     <div class="config-split">
     <h2>Magic Links</h2>
@@ -208,8 +182,7 @@
             + Add Magic Link Rule
         </button>
 
-        <form method="post" action="/admin" id="magiclinks-form" class="admin-form-top">
-            <input type="hidden" name="active_tab" value="magiclinks">
+        <form method="post" id="magiclinks-form" class="admin-form-top">
             <input type="hidden" name="action" value="save_magic_links">
             <button type="submit" class="admin-btn admin-btn--primary">
                 Save Magic Links
@@ -231,9 +204,11 @@
     </div>
     </div>
 </div>
+{{end}}
 
-<!-- Orphans Tab -->
-<div id="admin-content-orphans" class="admin-tab-content">
+{{if eq .Data.Tab "orphans"}}
+<!-- Orphans -->
+<div>
 
     <h2>Orphaned Files</h2>
 
@@ -263,116 +238,108 @@
     </div>
     </div>
 </div>
+{{end}}
 
-<!-- Thumbnails Tab -->
-<div id="admin-content-thumbnails" class="admin-tab-content">
-    <h2>Thumbnail Management</h2>
+{{if eq .Data.Tab "thumbnails"}}
+<!-- Missing Thumbnails -->
+<div>
+    <h2>Missing Thumbnails ({{len .Data.MissingThumbnails}})</h2>
 
-    <!-- Sub-tab Navigation -->
-    <div class="admin-subtab-nav">
-        <button onclick="showThumbnailSubTab('missing')" id="thumb-subtab-missing" class="thumb-subtab-btn thumb-subtab-btn--active">
-            Missing ({{len .Data.MissingThumbnails}})
-        </button>
-        <button onclick="showThumbnailSubTab('regenerate')" id="thumb-subtab-regenerate" class="thumb-subtab-btn">
-            Regenerate
-        </button>
-    </div>
+    {{if .Data.MissingThumbnails}}
+        <form method="post" action="/thumbnails/generate" class="admin-form-inline">
+            <input type="hidden" name="action" value="generate_all">
+            <input type="hidden" name="redirect" value="admin/thumbnails">
+            <button type="submit" onclick="return confirm('Generate thumbnails for all {{len .Data.MissingThumbnails}} videos? This may take a while.');" class="admin-btn admin-btn--success">
+                Generate All Missing Thumbnails
+            </button>
+            <small class="admin-hint admin-hint--inline">Uses timestamp 00:00:05 for all videos</small>
+        </form>
 
-    <!-- Missing Thumbnails Sub-tab -->
-    <div id="thumb-content-missing">
-        <h3>Missing Thumbnails ({{len .Data.MissingThumbnails}})</h3>
+        <div class="admin-thumb-grid">
+            {{range .Data.MissingThumbnails}}
+            <div class="admin-thumb-card">
+                <h4 class="admin-thumb-card__title">
+                    <a href="/file/{{.ID}}" target="_blank">{{.Filename}}</a>
+                </h4>
+                <p class="admin-thumb-card__id">ID: {{.ID}}</p>
 
-        {{if .Data.MissingThumbnails}}
-            <form method="post" action="/thumbnails/generate" class="admin-form-inline">
-                <input type="hidden" name="action" value="generate_all">
-                <button type="submit" onclick="return confirm('Generate thumbnails for all {{len .Data.MissingThumbnails}} videos? This may take a while.');" class="admin-btn admin-btn--success">
-                    Generate All Missing Thumbnails
-                </button>
-                <small class="admin-hint admin-hint--inline">Uses timestamp 00:00:05 for all videos</small>
-            </form>
+                <video class="admin-thumb-card__video" title="Click to capture frame">
+                    <source src="/uploads/{{.EscapedFilename}}">
+                </video>
 
-            <div class="admin-thumb-grid">
-                {{range .Data.MissingThumbnails}}
-                <div class="admin-thumb-card">
-                    <h4 class="admin-thumb-card__title">
-                        <a href="/file/{{.ID}}" target="_blank">{{.Filename}}</a>
-                    </h4>
-                    <p class="admin-thumb-card__id">ID: {{.ID}}</p>
-
-                    <video class="admin-thumb-card__video" title="Click to capture frame">
-                        <source src="/uploads/{{.EscapedFilename}}">
-                    </video>
-
-                    <form method="post" action="/thumbnails/generate" class="admin-thumb-card__form">
-                        <input type="hidden" name="action" value="generate_single">
-                        <input type="hidden" name="file_id" value="{{.ID}}">
-                        <input type="hidden" name="redirect" value="admin">
-
-                        <div class="admin-thumb-card__timestamp-row">
-                            <label class="admin-thumb-card__timestamp-label">Timestamp:</label>
-                            <input type="text" name="timestamp" value="00:00:05" placeholder="00:00:05"
-                                   class="admin-thumb-card__timestamp-input">
-                        </div>
-
-                        <button type="submit" class="admin-btn admin-btn--primary admin-btn--full">
-                            Generate Thumbnail
-                        </button>
-                    </form>
-                </div>
-                {{end}}
-            </div>
-        {{else}}
-            <div class="admin-alert admin-alert--success">
-                <strong>✓ All videos have thumbnails!</strong>
-            </div>
-        {{end}}
-    </div>
-
-    <!-- Regenerate Sub-tab -->
-    <div id="thumb-content-regenerate" class="admin-tab-content">
-        <h3>Regenerate Thumbnail</h3>
-
-        <div class="admin-regen-layout">
-
-            <div class="admin-regen-form-col">
-                <div class="admin-tip-box">
-                    <strong>Tip:</strong> Enter a file ID to regenerate its thumbnail with a custom timestamp. You can find file IDs in the URL when viewing a file (e.g., /file/312).
-                </div>
-
-                <form method="post" action="/thumbnails/generate" class="admin-regen-form">
+                <form method="post" action="/thumbnails/generate" class="admin-thumb-card__form">
                     <input type="hidden" name="action" value="generate_single">
-                    <input type="hidden" name="redirect" value="admin">
+                    <input type="hidden" name="file_id" value="{{.ID}}">
+                    <input type="hidden" name="redirect" value="admin/thumbnails">
 
-                    <div class="admin-form-group">
-                        <label for="file_id" class="admin-form-label">File ID:</label>
-                        <input type="text" id="file_id" name="file_id" required
-                               class="admin-mono-input"
-                               placeholder="e.g., 312">
-                        <small class="admin-hint">Enter the ID of the video file</small>
-                    </div>
-
-                    <div class="admin-form-group">
-                        <label for="timestamp" class="admin-form-label">Timestamp:</label>
-                        <input type="text" id="timestamp" name="timestamp" value="00:00:05" required
-                               class="admin-mono-input"
-                               placeholder="00:00:05">
-                        <small class="admin-hint">Format: HH:MM:SS (e.g., 00:00:05 for 5 seconds)</small>
+                    <div class="admin-thumb-card__timestamp-row">
+                        <label class="admin-thumb-card__timestamp-label">Timestamp:</label>
+                        <input type="text" name="timestamp" value="00:00:05" placeholder="00:00:05"
+                               class="admin-thumb-card__timestamp-input">
                     </div>
 
                     <button type="submit" class="admin-btn admin-btn--primary admin-btn--full">
-                        Generate/Regenerate Thumbnail
+                        Generate Thumbnail
                     </button>
                 </form>
             </div>
-
-            {{template "_recent" .}}
-
+            {{end}}
         </div>
+    {{else}}
+        <div class="admin-alert admin-alert--success">
+            <strong>✓ All videos have thumbnails!</strong>
+        </div>
+    {{end}}
+</div>
+{{end}}
+
+{{if eq .Data.Tab "thumbnails/regenerate"}}
+<!-- Regenerate Thumbnail -->
+<div>
+    <h2>Regenerate Thumbnail</h2>
+
+    <div class="admin-regen-layout">
+
+        <div class="admin-regen-form-col">
+            <div class="admin-tip-box">
+                <strong>Tip:</strong> Enter a file ID to regenerate its thumbnail with a custom timestamp. You can find file IDs in the URL when viewing a file (e.g., /file/312).
+            </div>
+
+            <form method="post" action="/thumbnails/generate" class="admin-regen-form">
+                <input type="hidden" name="action" value="generate_single">
+                <input type="hidden" name="redirect" value="admin/thumbnails/regenerate">
+
+                <div class="admin-form-group">
+                    <label for="file_id" class="admin-form-label">File ID:</label>
+                    <input type="text" id="file_id" name="file_id" required
+                           class="admin-mono-input"
+                           placeholder="e.g., 312">
+                    <small class="admin-hint">Enter the ID of the video file</small>
+                </div>
+
+                <div class="admin-form-group">
+                    <label for="timestamp" class="admin-form-label">Timestamp:</label>
+                    <input type="text" id="timestamp" name="timestamp" value="00:00:05" required
+                           class="admin-mono-input"
+                           placeholder="00:00:05">
+                    <small class="admin-hint">Format: HH:MM:SS (e.g., 00:00:05 for 5 seconds)</small>
+                </div>
+
+                <button type="submit" class="admin-btn admin-btn--primary admin-btn--full">
+                    Generate/Regenerate Thumbnail
+                </button>
+            </form>
+        </div>
+
+        {{template "_recent" .}}
+
     </div>
 </div>
+{{end}}
 
-<!-- Duplicates Tab -->
-<div id="admin-content-duplicates" class="admin-tab-content">
+{{if eq .Data.Tab "duplicates"}}
+<!-- Duplicates -->
+<div>
     <h2>Duplicates</h2>
     <p class="admin-hint">
         Scan one or two directories with <code>czkawka_cli</code> for similar images, then compare, delete or replace them.
@@ -404,17 +371,24 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
     </a>
 </div>
+{{end}}
 
-<script>window.initialAliasGroups = {{.Data.Config.TagAliases}};</script>
-<script>window.initialSedRules = {{.Data.Config.SedRules}};</script>
-<script>window.initialMagicLinks = {{.Data.Config.MagicLinks}};</script>
-<script>window.activeAdminTab = "{{.Data.ActiveTab}}";</script>
-<script src="/static/admin-tag-alias.js" defer></script>
-<script src="/static/admin-sed-rules.js" defer></script>
-<script src="/static/admin-magic-links.js" defer></script>
-<script src="/static/admin-duplicates.js" defer></script>
-<script src="/static/admin-tabs.js"></script>
 <script src="/static/common.js" defer></script>
 <script src="/static/hover-preview.js" defer></script>
+{{if eq .Data.Tab "aliases"}}
+<script>window.initialAliasGroups = {{.Data.Config.TagAliases}};</script>
+<script src="/static/admin-tag-alias.js" defer></script>
+{{end}}
+{{if eq .Data.Tab "sed-rules"}}
+<script>window.initialSedRules = {{.Data.Config.SedRules}};</script>
+<script src="/static/admin-sed-rules.js" defer></script>
+{{end}}
+{{if eq .Data.Tab "magic-links"}}
+<script>window.initialMagicLinks = {{.Data.Config.MagicLinks}};</script>
+<script src="/static/admin-magic-links.js" defer></script>
+{{end}}
+{{if eq .Data.Tab "duplicates"}}
+<script src="/static/admin-duplicates.js" defer></script>
+{{end}}
 
 {{template "_footer"}}

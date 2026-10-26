@@ -293,9 +293,9 @@ func propertiesIndexHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "properties.html", pageData)
 }
 
-func handleComputeProperties(w http.ResponseWriter, r *http.Request, orphanData OrphanData, missingThumbnails []VideoFile) {
+func handleComputeProperties(w http.ResponseWriter, r *http.Request) {
 	count, err := computeMissingProperties()
-	data := currentAdminState(r, orphanData, missingThumbnails)
+	data := currentAdminState(r)
 	if err != nil {
 		data.Error = "Property computation failed: " + err.Error()
 	} else {

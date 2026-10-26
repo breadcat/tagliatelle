@@ -31,6 +31,7 @@ type PageData struct {
 	Pagination    *Pagination
 	GallerySize   string
 	UntaggedCount int
+	AdminTab      string // slug of the admin page being viewed, empty elsewhere
 }
 
 type File struct {

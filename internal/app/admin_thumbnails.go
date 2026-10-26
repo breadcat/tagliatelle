@@ -117,7 +117,7 @@ func thumbnailsHandler(w http.ResponseWriter, r *http.Request) {
 
 func generateThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Redirect(w, r, "/admin", http.StatusSeeOther)
+		http.Redirect(w, r, adminThumbnailsPath, http.StatusSeeOther)
 		return
 	}
 
@@ -128,6 +128,10 @@ func generateThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	redirectBase := "/" + redirectTo
+	if redirectTo == "admin" {
+		redirectBase = adminThumbnailsPath
+	}
+	fromAdmin := strings.HasPrefix(redirectBase, "/admin/")
 
 	switch action {
 	case "generate_all":
@@ -182,8 +186,8 @@ func generateThumbnailHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if redirectTo == "admin" {
-			http.Redirect(w, r, "/admin?success="+url.QueryEscape(fmt.Sprintf("Thumbnail generated for file %s at %s", fileID, timestamp)), http.StatusSeeOther)
+		if fromAdmin {
+			http.Redirect(w, r, redirectBase+"?success="+url.QueryEscape(fmt.Sprintf("Thumbnail generated for file %s at %s", fileID, timestamp)), http.StatusSeeOther)
 		} else {
 			http.Redirect(w, r, fmt.Sprintf("/file/%s?success=%s", fileID, url.QueryEscape(fmt.Sprintf("Thumbnail generated at %s", timestamp))), http.StatusSeeOther)
 		}
