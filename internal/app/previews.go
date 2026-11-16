@@ -2,34 +2,42 @@ package app
 
 import (
 	"fmt"
-	"strings"
 )
 
 // getPreviewFiles returns one representative file for each tag value in the specified category
 func getPreviewFiles(filters []filter) ([]File, error) {
-	// Find the preview filter category
 	var previewCategory string
+	var otherFilters []filter
 	for _, f := range filters {
 		if f.IsPreviews {
-			previewCategory = f.Category
-			break
+			if previewCategory == "" {
+				previewCategory = f.Category
+			}
+			continue
 		}
+		otherFilters = append(otherFilters, f)
 	}
 
 	if previewCategory == "" {
 		return []File{}, nil
 	}
 
-	// First, get all tag values for the preview category that have files
+	// Discover only the tag values in previewCategory that actually co-occur
+	// with the other filters, instead of every value that exists anywhere.
+	otherWhere, otherArgs := buildTagFilterWhere(otherFilters)
+
 	tagQuery := `
 		SELECT DISTINCT t.value
 		FROM tags t
 		JOIN categories c ON t.category_id = c.id
 		JOIN file_tags ft ON ft.tag_id = t.id
-		WHERE c.name = ?
+		JOIN files f ON f.id = ft.file_id` +
+		otherWhere + ` AND c.name = ?
 		ORDER BY t.value`
 
-	tagRows, err := DB.Query(tagQuery, previewCategory)
+	tagArgs := append(append([]interface{}(nil), otherArgs...), previewCategory)
+
+	tagRows, err := DB.Query(tagQuery, tagArgs...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tag values: %w", err)
 	}
@@ -43,75 +51,30 @@ func getPreviewFiles(filters []filter) ([]File, error) {
 		}
 		tagValues = append(tagValues, tagValue)
 	}
+	if err := tagRows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate tag values: %w", err)
+	}
 
 	if len(tagValues) == 0 {
 		return []File{}, nil
 	}
 
-	// For each tag value, find one representative file
+	// For each candidate tag value, find one representative file matching
+	// that value plus all the other active filters.
 	var allFiles []File
 	for _, tagValue := range tagValues {
-		// Build query for this specific tag value with all filters applied
+		valueFilters := make([]filter, 0, len(otherFilters)+1)
+		valueFilters = append(valueFilters, otherFilters...)
+		valueFilters = append(valueFilters, filter{
+			Category: previewCategory,
+			Value:    tagValue,
+			Values:   []string{tagValue},
+		})
+
+		where, args := buildTagFilterWhere(valueFilters)
+
 		query := `SELECT f.id, f.filename, f.path, COALESCE(f.description, '') as description
-			FROM files f
-			WHERE 1=1`
-		args := []interface{}{}
-
-		// Apply all filters (including the preview category with this specific value)
-		for _, filter := range filters {
-			if filter.IsPreviews {
-				// For the preview filter, use the current tag value we're iterating over
-				query += `
-					AND EXISTS (
-						SELECT 1
-						FROM file_tags ft
-						JOIN tags t ON ft.tag_id = t.id
-						JOIN categories c ON c.id = t.category_id
-						WHERE ft.file_id = f.id AND c.name = ? AND t.value = ?
-					)`
-				args = append(args, filter.Category, tagValue)
-			} else if filter.IsProperty {
-				query += `
-					AND EXISTS (
-						SELECT 1
-						FROM file_properties fp
-						WHERE fp.file_id = f.id AND fp.key = ? AND fp.value = ?
-					)`
-				args = append(args, filter.Category, filter.Value)
-			} else if filter.Value == "unassigned" {
-				query += `
-					AND NOT EXISTS (
-						SELECT 1
-						FROM file_tags ft
-						JOIN tags t ON ft.tag_id = t.id
-						JOIN categories c ON c.id = t.category_id
-						WHERE ft.file_id = f.id AND c.name = ?
-					)`
-				args = append(args, filter.Category)
-			} else {
-				// Normal filter with aliases
-				placeholders := make([]string, len(filter.Values))
-				for i := range filter.Values {
-					placeholders[i] = "?"
-				}
-
-				query += fmt.Sprintf(`
-					AND EXISTS (
-						SELECT 1
-						FROM file_tags ft
-						JOIN tags t ON ft.tag_id = t.id
-						JOIN categories c ON c.id = t.category_id
-						WHERE ft.file_id = f.id AND c.name = ? AND t.value IN (%s)
-					)`, strings.Join(placeholders, ","))
-
-				args = append(args, filter.Category)
-				for _, v := range filter.Values {
-					args = append(args, v)
-				}
-			}
-		}
-
-		query += ` ORDER BY f.id DESC LIMIT 1`
+			FROM files f` + where + ` ORDER BY f.id DESC LIMIT 1`
 
 		files, err := queryFilesWithTags(query, args...)
 		if err != nil {
