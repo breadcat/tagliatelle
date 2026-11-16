@@ -3,8 +3,7 @@ package app
 import (
 	"database/sql"
 	"strings"
-
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type Config struct {
@@ -27,7 +26,7 @@ type TagAliasGroup struct {
 
 // InitDatabase opens the database connection and creates tables if needed
 func InitDatabase(dbPath string) (*sql.DB, error) {
-	DB, err := sql.Open("sqlite3", dbPath+"?_busy_timeout=5000")
+	DB, err := sql.Open("sqlite", dbPath+"?_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, err
 	}
