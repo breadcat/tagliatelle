@@ -27,6 +27,7 @@ func RegisterRoutes() {
 	http.HandleFunc("/notes/export", notesExportHandler)
 	http.HandleFunc("/notes/filter", notesFilterHandler)
 	http.HandleFunc("/notes/import", notesImportHandler)
+	http.HandleFunc("/notes/import-export", notesImportExportHandler)
 	http.HandleFunc("/notes/preview", notesPreviewHandler)
 	http.HandleFunc("/notes/save", notesSaveHandler)
 	http.HandleFunc("/notes/stats", notesStatsHandler)

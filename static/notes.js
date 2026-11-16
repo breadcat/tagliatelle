@@ -243,10 +243,6 @@ function clearFilters() {
     updatePreview(currentContent);
 }
 
-function exportNotes() {
-    window.location.href = '/notes/export';
-}
-
 // Warn on unsaved changes
 window.addEventListener('beforeunload', (e) => {
     if (editor.value !== originalContent) {

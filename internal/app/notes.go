@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"sort"
@@ -382,6 +383,21 @@ func notesPreviewHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// notesImportExportHandler displays the notes import and export page
+func notesImportExportHandler(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+
+	pageData := buildPageData("Import and Export Notes", struct {
+		Success string
+		Error   string
+	}{
+		Success: q.Get("success"),
+		Error:   q.Get("error"),
+	})
+
+	renderTemplate(w, "notes-import-export.html", pageData)
+}
+
 // notesExportHandler exports notes as plain text file
 func notesExportHandler(w http.ResponseWriter, r *http.Request) {
 	content, err := GetNotes(DB)
@@ -440,5 +456,5 @@ func notesImportHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/notes", http.StatusSeeOther)
+	http.Redirect(w, r, "/notes/import-export?success="+url.QueryEscape("Notes imported successfully!"), http.StatusSeeOther)
 }

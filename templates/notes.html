@@ -1,22 +1,5 @@
 {{template "_header" .}}
 
-<details><summary>Import and Export</summary>
-
-            <div class="import-form">
-				<button class="btn btn-primary" onclick="exportNotes()">Export</button>
-                <h4 style="margin-bottom: 10px">Import Notes</h4>
-                <form action="/notes/import" method="POST" enctype="multipart/form-data">
-                    <input type="file" name="file" accept=".txt" required>
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="merge" value="true">
-                        <span>Merge with existing notes (instead of replacing)</span>
-                    </label>
-                    <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Import</button>
-                </form>
-            </div>
-
-</details>
-
         <div class="toolbar">
             <div class="toolbar-group">
                 <input type="text" class="search-box" id="search-input" placeholder="Filter notes...">

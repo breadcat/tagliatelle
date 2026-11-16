@@ -1,0 +1,34 @@
+{{template "_header" .}}
+<h1>Import and Export Notes</h1>
+
+{{if .Data.Error}}
+<div class="admin-alert admin-alert--error">
+    <strong>Error:</strong> {{.Data.Error}}
+</div>
+{{end}}
+
+{{if .Data.Success}}
+<div class="admin-alert admin-alert--success">
+    <strong>Success:</strong> {{.Data.Success}}
+</div>
+{{end}}
+
+<div class="import-form">
+    <h4 style="margin-bottom: 10px">Export Notes</h4>
+    <form action="/notes/export" method="GET">
+        <button type="submit" class="btn btn-primary">Export</button>
+    </form>
+</div>
+
+<div class="import-form">
+    <h4 style="margin-bottom: 10px">Import Notes</h4>
+    <form action="/notes/import" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".txt" required>
+        <label class="checkbox-label">
+            <input type="checkbox" name="merge" value="true">
+            <span>Merge with existing notes (instead of replacing)</span>
+        </label>
+        <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Import</button>
+    </form>
+</div>
+{{template "_footer"}}
