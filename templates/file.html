@@ -93,7 +93,7 @@
 	{{else if hasAnySuffix .Data.File.Filename ".cbz"}}
 	  <div class="cbz-preview">
 		<a href="/cbz/{{.Data.File.ID}}">
-		  <img src="/uploads/thumbnails/{{.Data.File.Filename}}.jpg" class="file-content-image" alt="CBZ Preview">
+		  <img src="/uploads/thumbnails/{{.Data.EscapedFilename}}.jpg" class="file-content-image" alt="CBZ Preview">
 		</a>
 		<div class="cbz-open-button">
 		  <a href="/cbz/{{.Data.File.ID}}" class="text-button cbz-open-link">📖 Open CBZ Viewer</a>
