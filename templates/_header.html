@@ -24,7 +24,7 @@
           {{if gt (len $tags) 65}}
             <li class="tag-filter"><input type="text" class="tag-filter-input" placeholder="Filter {{len $tags}} entries..." autocomplete="off" aria-label="Filter {{$cat}} tags"></li>
             <li class="tag-filter-more"><a href="/tags#tag-{{$cat}}">{{len $tags}} entries...</a></li>
-            {{range $tags}}<li class="tag-filter-item" data-name="{{.Value}}" style="display:none"><a href="/tag/{{$cat}}/{{.Value}}">{{.Value}} ({{.Count}})</a></li>
+            {{range $tags}}<li class="tag-filter-item" data-name="{{.Value}}"><a href="/tag/{{$cat}}/{{.Value}}">{{.Value}} ({{.Count}})</a></li>
             {{end}}{{else}}
             {{range $tags}}<li><a href="/tag/{{$cat}}/{{.Value}}">{{.Value}} ({{.Count}})</a></li>
             {{end}}
@@ -40,7 +40,7 @@
     {{range $key, $values := .Properties}}<li>
         <a href="/properties#prop-{{$key}}">{{$key}}</a>
         <ul>
-          {{range $values}}<li><a href="/property/{{$key}}/{{.Value}}" {{if eq $key "filetype"}}style="text-transform:lowercase"{{end}}>{{.Value}} ({{.Count}})</a></li>
+          {{range $values}}<li><a href="/property/{{$key}}/{{.Value}}" {{if eq $key "filetype"}}class="lowercase"{{end}}>{{.Value}} ({{.Count}})</a></li>
           {{end}}
         </ul>
       </li>{{end}}

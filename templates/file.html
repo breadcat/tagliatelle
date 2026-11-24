@@ -40,7 +40,7 @@
 	{{range $k, $v := .Data.Properties}}
 	  <li>
 		<span class="file-tag-category">{{$k}}:</span>
-		<a href="/property/{{$k}}/{{$v}}" {{if eq $k "filetype"}}style="text-transform:lowercase"{{end}}>{{$v}}</a>
+		<a href="/property/{{$k}}/{{$v}}" {{if eq $k "filetype"}}class="lowercase"{{end}}>{{$v}}</a>
 	  </li>
 	{{end}}
 	</ul>
@@ -96,7 +96,7 @@
 		  <img src="/uploads/thumbnails/{{.Data.File.Filename}}.jpg" class="file-content-image" alt="CBZ Preview">
 		</a>
 		<div class="cbz-open-button">
-		  <a href="/cbz/{{.Data.File.ID}}" class="text-button" style="display: inline-block; padding: 10px 20px; margin-top: 10px;">📖 Open CBZ Viewer</a>
+		  <a href="/cbz/{{.Data.File.ID}}" class="text-button cbz-open-link">📖 Open CBZ Viewer</a>
 		</div>
 	  </div>
 	{{else if hasAnySuffix .Data.File.Filename ".mp4" ".webm" ".mov" ".m4v"}}
@@ -136,7 +136,7 @@
 		</div>
 
 		<!-- Edit Mode (initially hidden) -->
-		<div id="description-edit" style="display: none;">
+		<div id="description-edit" class="is-hidden">
 			<form method="post">
 				<input type="hidden" name="action" value="update_description">
 				<div>
@@ -148,7 +148,7 @@
 						placeholder="Enter description..."
 					>{{.Data.File.Description}}</textarea>
 				</div>
-				<div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+				<div class="form-actions">
 					<button class="text-button" type="submit">Save Description</button>
 					<button class="text-button" type="button" onclick="cancelDescriptionEdit()">Cancel</button>
 				</div>

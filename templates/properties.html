@@ -5,7 +5,7 @@
 <details><summary><a href="#prop-{{$key}}" id="prop-{{$key}}">{{$key}}</a></summary>
 <ul>
       {{range $values}}
-        <li><a href="/property/{{$key}}/{{.Value}}" {{if eq $key "filetype"}}style="text-transform:lowercase"{{end}}>{{.Value}} ({{.Count}})</a></li>
+        <li><a href="/property/{{$key}}/{{.Value}}" {{if eq $key "filetype"}}class="lowercase"{{end}}>{{.Value}} ({{.Count}})</a></li>
       {{end}}
 </ul>
 </details>

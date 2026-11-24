@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', function () {
         return li.dataset.name.toLowerCase().includes(q);
       }) : [];
       var show = q !== '' && matches.length < 20;
-      items.forEach(function (li) { li.style.display = 'none'; });
-      if (show) matches.forEach(function (li) { li.style.display = ''; });
-      more.style.display = show ? 'none' : '';
+      items.forEach(function (li) { li.classList.remove('is-match'); });
+      if (show) matches.forEach(function (li) { li.classList.add('is-match'); });
+      more.classList.toggle('is-hidden', show);
     });
   });
 });

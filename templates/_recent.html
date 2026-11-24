@@ -2,8 +2,8 @@
 
             <script src="/static/hover-preview.js" defer></script>
 
-            <div style="flex: 1; min-width: 200px;">
-                <h4 style="margin-top: 0;">Recent Files (for reference)</h4>
+            <div class="recent-files">
+                <h4>Recent Files (for reference)</h4>
                 {{range .Data.RecentFiles}}
                 <div class="file-item">
                     <span class="file-id">ID {{.ID}}:</span> <a href="/file/{{.ID}}" title="{{.Filename}}">{{.Filename}}</a>

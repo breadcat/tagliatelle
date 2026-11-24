@@ -283,3 +283,17 @@ div.config-split {flex: 1}
 .dup-btn--replace {margin-left:6px}
 .dup-btn--delall {float:right;margin:0 0 8px;color:#fff;background:#c0392b;border:1px solid #a93226;border-radius:3px}
 .dup-group:not([data-count="2"]) .dup-btn--replace {display:none}
+
+.is-hidden {display: none}
+.lowercase {text-transform: lowercase !important}
+.recent-files {flex: 1; min-width: 200px}
+.recent-files h4 {margin-top: 0}
+.bulk-layout {display: flex; gap: 30px; align-items: flex-start}
+.bulk-main {flex: 0 0 auto}
+.cbz-open-link {display: inline-block; padding: 10px 20px; margin-top: 10px}
+.form-actions {margin-top: 8px; display: flex; align-items: center; gap: 10px}
+.import-form h4 {margin-bottom: 10px}
+.import-submit {margin-top: 10px}
+/* header tag filter: items stay hidden until header-menu-filter.js marks them as matches */
+.tag-filter-item {display: none}
+.tag-filter-item.is-match {display: block}
